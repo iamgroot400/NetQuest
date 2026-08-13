@@ -1,0 +1,59 @@
+{
+  "id": "two-switch-lan",
+  "name": "Growing the LAN",
+  "category": "switching",
+  "difficulty": 2,
+  "xp": 200,
+  "level": 4,
+  "description": "One switch ran out of ports. Add a second and link them.",
+  "brief": "The office grew to four machines on two different floors. Build two switches, put two PCs on each, and run a single uplink cable between the switches.\n\nEvery machine stays in 10.0.0.0/24 — switches do not care about IP addresses, so one flat network spans both of them.\n\nName them PC-01 to PC-04, Switch-01 and Switch-02.",
+  "hints": [
+    "Two switches, four PCs, five cables in total.",
+    "The cable between the two switches is just another cable.",
+    "Addresses: 10.0.0.1 to 10.0.0.4, mask 255.255.255.0.",
+    "PC-01 on Switch-01 must be able to ping PC-04 on Switch-02."
+  ],
+  "topology": null,
+  "requires": [
+    "learning-switch"
+  ],
+  "objectives": [
+    {
+      "type": "device_exists",
+      "device_type": "switch",
+      "count": 2
+    },
+    {
+      "type": "device_exists",
+      "device_type": "pc",
+      "count": 4
+    },
+    {
+      "type": "link_exists",
+      "a": "Switch-01",
+      "b": "Switch-02"
+    },
+    {
+      "type": "in_subnet",
+      "device": "PC-01",
+      "subnet": "10.0.0.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "in_subnet",
+      "device": "PC-04",
+      "subnet": "10.0.0.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "PC-04"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-02",
+      "destination": "PC-03"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+name: Mission idea
+description: Suggest a new challenge or troubleshooting scenario
+labels: ['challenge', 'good first issue']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Missions are plain JSON — you can also just build it yourself and open a
+        pull request. See [docs/ADDING-CHALLENGES.md](../../docs/ADDING-CHALLENGES.md).
+
+  - type: input
+    id: name
+    attributes:
+      label: Mission name
+      placeholder: The Silent Server
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options: [beginner, switching, routing, troubleshooting]
+    validations:
+      required: true
+
+  - type: textarea
+    id: scenario
+    attributes:
+      label: The scenario
+      description: What does the learner see when they open it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: lesson
+    attributes:
+      label: What should they work out?
+      description: >
+        The one idea this mission teaches. Good missions break exactly one thing.
+    validations:
+      required: true
+
+  - type: input
+    id: protocols
+    attributes:
+      label: Does it need anything not yet implemented?
+      description: e.g. VLANs, DHCP, NAT — see the Known limitations section of the README.
+      placeholder: 'No — Ethernet, IPv4, ARP and ICMP are enough'

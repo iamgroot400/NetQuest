@@ -1,0 +1,250 @@
+{
+  "id": "the-mask-matters",
+  "name": "The Mask Matters",
+  "category": "beginner",
+  "difficulty": 2,
+  "xp": 200,
+  "level": 2,
+  "description": "One PC is cut off, and every address looks correct.",
+  "brief": "PC-01 and PC-03 talk to each other happily. PC-02 is on the same switch, has an address that starts with 192.168.1, and yet it can reach nobody.\n\nThe subnet mask decides which addresses a host believes are local. Look at all three PCs and work out why PC-02 disagrees with the others about where it lives.",
+  "hints": [
+    "Run ipconfig on each PC and compare the three lines carefully.",
+    "255.255.255.192 splits a /24 into blocks of 64 addresses.",
+    "With that mask, is .200 in the same block as .10?",
+    "Give PC-02 the same mask as its neighbours, and an address in range."
+  ],
+  "topology": {
+    "version": 1,
+    "name": "Office LAN",
+    "devices": [
+      {
+        "id": "pc-01",
+        "type": "pc",
+        "name": "PC-01",
+        "position": {
+          "x": -240,
+          "y": -120
+        },
+        "interfaces": [
+          {
+            "id": "pc-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:00:00",
+            "ipv4": "192.168.1.10",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "pc-02",
+        "type": "pc",
+        "name": "PC-02",
+        "position": {
+          "x": -240,
+          "y": 40
+        },
+        "interfaces": [
+          {
+            "id": "pc-02-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:01:00",
+            "ipv4": "192.168.1.200",
+            "netmask": "255.255.255.192",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "pc-03",
+        "type": "pc",
+        "name": "PC-03",
+        "position": {
+          "x": -240,
+          "y": 200
+        },
+        "interfaces": [
+          {
+            "id": "pc-03-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:02:00",
+            "ipv4": "192.168.1.30",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "sw-01",
+        "type": "switch",
+        "name": "Switch-01",
+        "position": {
+          "x": 40,
+          "y": 40
+        },
+        "interfaces": [
+          {
+            "id": "sw-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:03:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:03:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth2",
+            "name": "eth2",
+            "mac": "02:00:5E:00:03:02",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth3",
+            "name": "eth3",
+            "mac": "02:00:5E:00:03:03",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth4",
+            "name": "eth4",
+            "mac": "02:00:5E:00:03:04",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth5",
+            "name": "eth5",
+            "mac": "02:00:5E:00:03:05",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth6",
+            "name": "eth6",
+            "mac": "02:00:5E:00:03:06",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth7",
+            "name": "eth7",
+            "mac": "02:00:5E:00:03:07",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      }
+    ],
+    "links": [
+      {
+        "id": "lnk-0",
+        "a": {
+          "device_id": "pc-01",
+          "interface_id": "pc-01-eth0"
+        },
+        "b": {
+          "device_id": "sw-01",
+          "interface_id": "sw-01-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-1",
+        "a": {
+          "device_id": "pc-02",
+          "interface_id": "pc-02-eth0"
+        },
+        "b": {
+          "device_id": "sw-01",
+          "interface_id": "sw-01-eth1"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-2",
+        "a": {
+          "device_id": "pc-03",
+          "interface_id": "pc-03-eth0"
+        },
+        "b": {
+          "device_id": "sw-01",
+          "interface_id": "sw-01-eth2"
+        },
+        "status": "up"
+      }
+    ]
+  },
+  "requires": [
+    "connect-the-office"
+  ],
+  "objectives": [
+    {
+      "type": "interface_configured",
+      "device": "PC-02",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "in_subnet",
+      "device": "PC-02",
+      "subnet": "192.168.1.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "PC-02"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-02",
+      "destination": "PC-03"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "id": "connect-the-office",
+  "name": "Connect the Office",
+  "category": "beginner",
+  "difficulty": 1,
+  "xp": 150,
+  "level": 2,
+  "description": "Three computers need to reach each other through a switch.",
+  "brief": "A small office has three computers. A single cable only ever joins two machines, so you need a switch in the middle.\n\nBuild the network, put every PC in 192.168.1.0/24, and prove that any PC can reach any other.",
+  "hints": [
+    "One switch, three PCs, three cables — one from each PC to the switch.",
+    "Give the PCs 192.168.1.10, .20 and .30 with mask 255.255.255.0.",
+    "A switch needs no configuration at all. That is the point of it.",
+    "After a ping, open the switch terminal and run: show mac-address-table"
+  ],
+  "topology": null,
+  "requires": [
+    "first-contact"
+  ],
+  "objectives": [
+    {
+      "type": "device_exists",
+      "device_type": "switch",
+      "count": 1
+    },
+    {
+      "type": "device_exists",
+      "device_type": "pc",
+      "count": 3
+    },
+    {
+      "type": "link_exists",
+      "a": "PC-01",
+      "b": "Switch-01"
+    },
+    {
+      "type": "link_exists",
+      "a": "PC-02",
+      "b": "Switch-01"
+    },
+    {
+      "type": "link_exists",
+      "a": "PC-03",
+      "b": "Switch-01"
+    },
+    {
+      "type": "in_subnet",
+      "device": "PC-01",
+      "subnet": "192.168.1.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "in_subnet",
+      "device": "PC-02",
+      "subnet": "192.168.1.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "in_subnet",
+      "device": "PC-03",
+      "subnet": "192.168.1.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "PC-02"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "PC-03"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-03",
+      "destination": "PC-02"
+    }
+  ]
+}

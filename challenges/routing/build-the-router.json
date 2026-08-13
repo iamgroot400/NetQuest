@@ -1,0 +1,49 @@
+{
+  "id": "build-the-router",
+  "name": "Build It Yourself",
+  "category": "routing",
+  "difficulty": 3,
+  "xp": 300,
+  "level": 5,
+  "description": "Design a two-subnet network from an empty canvas.",
+  "brief": "No starting topology this time. Build a routed network from nothing:\n\n  • 172.16.1.0/24 with PC-01, on Switch-01\n  • 172.16.2.0/24 with Server-01, on Switch-02\n  • Router-01 with an address on each network\n\nWire it, address it, set the gateways, and make PC-01 reach Server-01.",
+  "hints": [
+    "A router interface is the gateway for the subnet it sits in.",
+    "Give Router-01 eth0 172.16.1.1 and eth1 172.16.2.1.",
+    "Configure each router interface in the Interfaces panel.",
+    "Check your work with 'show ip route' — two connected routes appear."
+  ],
+  "topology": null,
+  "requires": [
+    "crossing-the-line"
+  ],
+  "objectives": [
+    {
+      "type": "device_exists",
+      "device_type": "router",
+      "count": 1
+    },
+    {
+      "type": "in_subnet",
+      "device": "PC-01",
+      "subnet": "172.16.1.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "in_subnet",
+      "device": "Server-01",
+      "subnet": "172.16.2.0",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "Server-01"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "Server-01",
+      "destination": "PC-01"
+    }
+  ]
+}

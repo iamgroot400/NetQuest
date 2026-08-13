@@ -1,0 +1,46 @@
+{
+  "id": "first-contact",
+  "name": "First Contact",
+  "category": "beginner",
+  "difficulty": 1,
+  "xp": 100,
+  "level": 1,
+  "description": "Two computers, one cable. Make them talk.",
+  "brief": "Every network starts with two machines and a wire between them. Drag two PCs onto the canvas, run a cable from one to the other, then give each an address in the same network so they can find each other.\n\nUse 192.168.1.10 and 192.168.1.20 with the mask 255.255.255.0.",
+  "hints": [
+    "Drag a PC from the device palette onto the canvas twice.",
+    "Drag from the dot on the edge of one PC to the other to lay a cable.",
+    "Select a PC and fill in its IPv4 address and subnet mask, then press Apply.",
+    "Open PC-01's terminal and run: ping 192.168.1.20"
+  ],
+  "topology": null,
+  "objectives": [
+    {
+      "type": "device_exists",
+      "device_type": "pc",
+      "count": 2
+    },
+    {
+      "type": "link_exists",
+      "a": "PC-01",
+      "b": "PC-02"
+    },
+    {
+      "type": "interface_configured",
+      "device": "PC-01",
+      "ipv4": "192.168.1.10",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "interface_configured",
+      "device": "PC-02",
+      "ipv4": "192.168.1.20",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "PC-02"
+    }
+  ]
+}

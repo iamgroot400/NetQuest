@@ -1,0 +1,53 @@
+name: Bug report
+description: Something in the simulator behaves incorrectly
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The single most useful thing you can attach is your network. Press
+        **Save** in the app and drop the JSON file into this issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what did the simulator do?
+      placeholder: |
+        PC-01 and PC-02 are on the same switch in 192.168.1.0/24.
+        `ping 192.168.1.20` from PC-01 times out.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: topology
+    attributes:
+      label: Your network
+      description: Attach the file from **Save**, or paste the JSON here.
+      render: json
+
+  - type: textarea
+    id: events
+    attributes:
+      label: Event log
+      description: >
+        The Events tab in the bottom panel. This usually contains the answer.
+      render: text
+
+  - type: dropdown
+    id: how-running
+    attributes:
+      label: How are you running it?
+      options:
+        - docker compose
+        - Local dev servers (uvicorn + vite)
+        - Other
+    validations:
+      required: true

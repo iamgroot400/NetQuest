@@ -1,0 +1,378 @@
+{
+  "id": "the-severed-cable",
+  "name": "The Severed Cable",
+  "category": "troubleshooting",
+  "difficulty": 2,
+  "xp": 200,
+  "level": 4,
+  "description": "The server room went dark. Nothing was reconfigured.",
+  "brief": "🚨 NETWORK OUTAGE\n\nNobody can reach Server-01 any more. The addresses have not been touched, the gateways are right, and the router is powered up.\n\nSomething physical is wrong. Find it and fix it.",
+  "hints": [
+    "Run 'show interfaces' on Router-01 and read the line protocol state.",
+    "An interface can be up while its line protocol is down.",
+    "Look closely at the cables on the canvas — one is drawn differently.",
+    "Select the broken cable and reconnect it."
+  ],
+  "topology": {
+    "version": 1,
+    "name": "Two departments",
+    "devices": [
+      {
+        "id": "pc-01",
+        "type": "pc",
+        "name": "PC-01",
+        "position": {
+          "x": -420,
+          "y": -60
+        },
+        "interfaces": [
+          {
+            "id": "pc-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:00:00",
+            "ipv4": "192.168.10.20",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "192.168.10.1",
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "pc-02",
+        "type": "pc",
+        "name": "PC-02",
+        "position": {
+          "x": -420,
+          "y": 120
+        },
+        "interfaces": [
+          {
+            "id": "pc-02-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:01:00",
+            "ipv4": "192.168.10.21",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "192.168.10.1",
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "sw-01",
+        "type": "switch",
+        "name": "Switch-01",
+        "position": {
+          "x": -220,
+          "y": 30
+        },
+        "interfaces": [
+          {
+            "id": "sw-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:02:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:02:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth2",
+            "name": "eth2",
+            "mac": "02:00:5E:00:02:02",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth3",
+            "name": "eth3",
+            "mac": "02:00:5E:00:02:03",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth4",
+            "name": "eth4",
+            "mac": "02:00:5E:00:02:04",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth5",
+            "name": "eth5",
+            "mac": "02:00:5E:00:02:05",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth6",
+            "name": "eth6",
+            "mac": "02:00:5E:00:02:06",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-01-eth7",
+            "name": "eth7",
+            "mac": "02:00:5E:00:02:07",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "r-01",
+        "type": "router",
+        "name": "Router-01",
+        "position": {
+          "x": -20,
+          "y": 30
+        },
+        "interfaces": [
+          {
+            "id": "r-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:03:00",
+            "ipv4": "192.168.10.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          },
+          {
+            "id": "r-01-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:03:01",
+            "ipv4": "192.168.20.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "sw-02",
+        "type": "switch",
+        "name": "Switch-02",
+        "position": {
+          "x": 180,
+          "y": 30
+        },
+        "interfaces": [
+          {
+            "id": "sw-02-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:04:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-02-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:04:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-02-eth2",
+            "name": "eth2",
+            "mac": "02:00:5E:00:04:02",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-02-eth3",
+            "name": "eth3",
+            "mac": "02:00:5E:00:04:03",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-02-eth4",
+            "name": "eth4",
+            "mac": "02:00:5E:00:04:04",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-02-eth5",
+            "name": "eth5",
+            "mac": "02:00:5E:00:04:05",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-02-eth6",
+            "name": "eth6",
+            "mac": "02:00:5E:00:04:06",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "sw-02-eth7",
+            "name": "eth7",
+            "mac": "02:00:5E:00:04:07",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "srv-01",
+        "type": "server",
+        "name": "Server-01",
+        "position": {
+          "x": 380,
+          "y": 30
+        },
+        "interfaces": [
+          {
+            "id": "srv-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:05:00",
+            "ipv4": "192.168.20.50",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "192.168.20.1",
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      }
+    ],
+    "links": [
+      {
+        "id": "lnk-0",
+        "a": {
+          "device_id": "pc-01",
+          "interface_id": "pc-01-eth0"
+        },
+        "b": {
+          "device_id": "sw-01",
+          "interface_id": "sw-01-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-1",
+        "a": {
+          "device_id": "pc-02",
+          "interface_id": "pc-02-eth0"
+        },
+        "b": {
+          "device_id": "sw-01",
+          "interface_id": "sw-01-eth1"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-2",
+        "a": {
+          "device_id": "sw-01",
+          "interface_id": "sw-01-eth2"
+        },
+        "b": {
+          "device_id": "r-01",
+          "interface_id": "r-01-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-3",
+        "a": {
+          "device_id": "r-01",
+          "interface_id": "r-01-eth1"
+        },
+        "b": {
+          "device_id": "sw-02",
+          "interface_id": "sw-02-eth0"
+        },
+        "status": "down"
+      },
+      {
+        "id": "lnk-4",
+        "a": {
+          "device_id": "sw-02",
+          "interface_id": "sw-02-eth1"
+        },
+        "b": {
+          "device_id": "srv-01",
+          "interface_id": "srv-01-eth0"
+        },
+        "status": "up"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "Server-01"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-02",
+      "destination": "Server-01"
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+@import '@xyflow/react/dist/style.css';
+@import 'tailwindcss';
+
+/*
+  A dark developer-tool palette: near-black panels, one cyan accent for
+  interaction, and a fixed colour per device type so the canvas, the event log
+  and the packet inspector all agree on what a router looks like.
+*/
+@theme {
+  --color-base: #090c11;
+  --color-surface: #0e131a;
+  --color-panel: #131a23;
+  --color-raised: #1a222d;
+  --color-line: #232d3a;
+  --color-line-soft: #1b232e;
+
+  --color-ink: #e6ebf2;
+  --color-ink-dim: #9aa7b8;
+  --color-ink-faint: #64748b;
+
+  --color-accent: #22d3ee;
+  --color-accent-dim: #0e7490;
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+
+  --color-pc: #60a5fa;
+  --color-switch: #a78bfa;
+  --color-router: #fbbf24;
+  --color-server: #34d399;
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+
+  --radius-panel: 10px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-base);
+  color: var(--color-ink);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Thin, unobtrusive scrollbars everywhere. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* React Flow overrides so the canvas matches the app shell. */
+.react-flow {
+  --xy-background-color: var(--color-base);
+  --xy-edge-stroke-default: var(--color-line);
+  --xy-edge-stroke-selected-default: var(--color-accent);
+  --xy-connectionline-stroke-default: var(--color-accent);
+  --xy-handle-background-color-default: var(--color-raised);
+  --xy-handle-border-color-default: var(--color-line);
+}
+
+.react-flow__node {
+  cursor: grab;
+}
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+.react-flow__attribution {
+  background: transparent;
+  color: var(--color-ink-faint);
+  font-size: 10px;
+}
+
+.react-flow__controls-button {
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-ink-dim);
+  fill: currentColor;
+}
+.react-flow__controls-button:hover {
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+
+.react-flow__minimap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+}
+
+@keyframes nq-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.nq-active-ring {
+  animation: nq-pulse 1s ease-in-out infinite;
+}
+
+@keyframes nq-dash {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+.nq-flowing {
+  stroke-dasharray: 6 10;
+  animation: nq-dash 0.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nq-active-ring,
+  .nq-flowing {
+    animation: none;
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "id": "the-missing-route",
+  "name": "The Missing Route",
+  "category": "routing",
+  "difficulty": 4,
+  "xp": 350,
+  "level": 5,
+  "description": "Two routers, one link, and neither knows about the other side.",
+  "brief": "The branch office and head office are joined by a point-to-point link on 10.0.0.0/30. Both routers are cabled and both have addresses.\n\nA router only ever knows the networks it is directly attached to. Router-01 has never heard of 192.168.20.0/24, and Router-02 has never heard of 192.168.10.0/24.\n\nAdd a static route on each router so packets can find their way there and back.",
+  "hints": [
+    "Run 'show ip route' on both routers and compare what is missing.",
+    "On Router-01 add: 192.168.20.0 / 255.255.255.0 via 10.0.0.2",
+    "On Router-02 add: 192.168.10.0 / 255.255.255.0 via 10.0.0.1",
+    "One route alone is not enough — the reply needs a way home too."
+  ],
+  "topology": {
+    "version": 1,
+    "name": "Branch to head office",
+    "devices": [
+      {
+        "id": "pc-01",
+        "type": "pc",
+        "name": "PC-01",
+        "position": {
+          "x": -460,
+          "y": 20
+        },
+        "interfaces": [
+          {
+            "id": "pc-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:00:00",
+            "ipv4": "192.168.10.20",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "192.168.10.1",
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "r-01",
+        "type": "router",
+        "name": "Router-01",
+        "position": {
+          "x": -240,
+          "y": 20
+        },
+        "interfaces": [
+          {
+            "id": "r-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:01:00",
+            "ipv4": "192.168.10.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          },
+          {
+            "id": "r-01-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:01:01",
+            "ipv4": "10.0.0.1",
+            "netmask": "255.255.255.252",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "r-02",
+        "type": "router",
+        "name": "Router-02",
+        "position": {
+          "x": 40,
+          "y": 20
+        },
+        "interfaces": [
+          {
+            "id": "r-02-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:02:00",
+            "ipv4": "10.0.0.2",
+            "netmask": "255.255.255.252",
+            "enabled": true
+          },
+          {
+            "id": "r-02-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:02:01",
+            "ipv4": "192.168.20.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      },
+      {
+        "id": "srv-01",
+        "type": "server",
+        "name": "Server-01",
+        "position": {
+          "x": 300,
+          "y": 20
+        },
+        "interfaces": [
+          {
+            "id": "srv-01-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:03:00",
+            "ipv4": "192.168.20.50",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "192.168.20.1",
+          "static_routes": []
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {}
+        }
+      }
+    ],
+    "links": [
+      {
+        "id": "lnk-0",
+        "a": {
+          "device_id": "pc-01",
+          "interface_id": "pc-01-eth0"
+        },
+        "b": {
+          "device_id": "r-01",
+          "interface_id": "r-01-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-1",
+        "a": {
+          "device_id": "r-01",
+          "interface_id": "r-01-eth1"
+        },
+        "b": {
+          "device_id": "r-02",
+          "interface_id": "r-02-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-2",
+        "a": {
+          "device_id": "r-02",
+          "interface_id": "r-02-eth1"
+        },
+        "b": {
+          "device_id": "srv-01",
+          "interface_id": "srv-01-eth0"
+        },
+        "status": "up"
+      }
+    ]
+  },
+  "requires": [
+    "build-the-router"
+  ],
+  "objectives": [
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "Server-01"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "Server-01",
+      "destination": "PC-01"
+    }
+  ]
+}
