@@ -12,12 +12,13 @@ node_modules/
 dist/
 .vite/
 
-# Editors and OS
+# Editors, tools and OS
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+.claude/
 
 # Local environment
 .env

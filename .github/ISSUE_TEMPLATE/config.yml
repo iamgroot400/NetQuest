@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: How do I add a mission?
-    url: https://github.com/OWNER/network-simulator/blob/main/docs/ADDING-CHALLENGES.md
+    url: https://github.com/iamgroot400/Open-Source-Network-Simulator/blob/main/docs/ADDING-CHALLENGES.md
     about: Missions are one JSON file and need no code.
   - name: How does the engine work?
-    url: https://github.com/OWNER/network-simulator/blob/main/docs/ARCHITECTURE.md
+    url: https://github.com/iamgroot400/Open-Source-Network-Simulator/blob/main/docs/ARCHITECTURE.md
     about: The delivery loop, the state model, and why nothing can fake a result.
