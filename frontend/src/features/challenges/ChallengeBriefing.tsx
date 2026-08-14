@@ -63,6 +63,17 @@ export function ChallengeBriefing() {
           {challenge.brief || challenge.description}
         </p>
 
+        {isDone && challenge.explanation ? (
+          <section>
+            <SectionTitle>What was going on</SectionTitle>
+            <div className="rounded-md border border-ok/25 bg-ok/5 px-3 py-2.5">
+              <p className="text-[11.5px] leading-relaxed whitespace-pre-line text-ink-dim">
+                {challenge.explanation}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
         <section>
           <SectionTitle>Objectives</SectionTitle>
           <ul className="space-y-1">

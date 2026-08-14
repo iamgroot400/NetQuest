@@ -71,6 +71,10 @@ class ChallengeCategory(str, Enum):
     SWITCHING = "switching"
     ROUTING = "routing"
     TROUBLESHOOTING = "troubleshooting"
+    #: DNS, DHCP and the services that run on top of a working network.
+    SERVICES = "services"
+    #: Firewalls, NAT and tunnelling.
+    SECURITY = "security"
 
 
 class ChallengeSchema(BaseModel):

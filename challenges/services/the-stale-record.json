@@ -1,0 +1,675 @@
+{
+  "id": "the-stale-record",
+  "name": "The Stale Record",
+  "category": "services",
+  "difficulty": 3,
+  "xp": 250,
+  "level": 6,
+  "description": "The name resolves. The address it gives is wrong.",
+  "brief": "🚨 SERVICE DOWN\n\nNobody can load web.netquest.local. DNS is clearly working — every lookup gets a prompt answer with no errors at all.\n\nThe answer is simply not true. Find out what the web server's address actually is, then compare it with what DNS is handing out.",
+  "hints": [
+    "Run 'nslookup web.netquest.local' on PC-01. Note the address.",
+    "Now select WEB-01 and look at the address it really has.",
+    "Try pinging both addresses and see which one answers.",
+    "Fix the A record on DNS-01 so it points at the real server."
+  ],
+  "explanation": "A successful lookup is not the same as a correct one. DNS answered every query without complaint, so nothing in the output looked like an error — it was simply pointing at an address where nothing lived.\n\nThis is why the habit of checking what a name resolves to, and then checking that address separately, matters so much. 'NXDOMAIN' is easy to spot; a confidently wrong answer is not.",
+  "topology": {
+    "version": 1,
+    "name": "Untitled network",
+    "devices": [
+      {
+        "id": "dev-0",
+        "type": "pc",
+        "name": "PC-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-0-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:00:00",
+            "ipv4": "10.0.1.10",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "10.0.1.1",
+          "dns_server": "10.0.2.53",
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-1",
+        "type": "pc",
+        "name": "PC-02",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-1-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:01:00",
+            "ipv4": "10.0.1.11",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "10.0.1.1",
+          "dns_server": "10.0.2.53",
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-2",
+        "type": "server",
+        "name": "DHCP-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-2-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:02:00",
+            "ipv4": "10.0.1.67",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "10.0.1.1",
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [
+            {
+              "name": "DHCP",
+              "protocol": "UDP",
+              "port": 67,
+              "enabled": true
+            }
+          ],
+          "dns_records": [],
+          "dhcp_pool": {
+            "start": "10.0.1.100",
+            "end": "10.0.1.110",
+            "netmask": "255.255.255.0",
+            "gateway": "10.0.1.1",
+            "dns": "10.0.2.53",
+            "lease_seconds": 86400,
+            "enabled": true
+          },
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-3",
+        "type": "switch",
+        "name": "Switch-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-3-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:03:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:03:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth2",
+            "name": "eth2",
+            "mac": "02:00:5E:00:03:02",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth3",
+            "name": "eth3",
+            "mac": "02:00:5E:00:03:03",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth4",
+            "name": "eth4",
+            "mac": "02:00:5E:00:03:04",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth5",
+            "name": "eth5",
+            "mac": "02:00:5E:00:03:05",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth6",
+            "name": "eth6",
+            "mac": "02:00:5E:00:03:06",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth7",
+            "name": "eth7",
+            "mac": "02:00:5E:00:03:07",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-4",
+        "type": "firewall",
+        "name": "Firewall-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-4-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:04:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-4-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:04:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-5",
+        "type": "router",
+        "name": "Router-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-5-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:05:00",
+            "ipv4": "10.0.1.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          },
+          {
+            "id": "dev-5-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:05:01",
+            "ipv4": "10.0.2.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-6",
+        "type": "switch",
+        "name": "Switch-02",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-6-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:06:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-6-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:06:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-6-eth2",
+            "name": "eth2",
+            "mac": "02:00:5E:00:06:02",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-6-eth3",
+            "name": "eth3",
+            "mac": "02:00:5E:00:06:03",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-6-eth4",
+            "name": "eth4",
+            "mac": "02:00:5E:00:06:04",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-6-eth5",
+            "name": "eth5",
+            "mac": "02:00:5E:00:06:05",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-6-eth6",
+            "name": "eth6",
+            "mac": "02:00:5E:00:06:06",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-6-eth7",
+            "name": "eth7",
+            "mac": "02:00:5E:00:06:07",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-7",
+        "type": "server",
+        "name": "WEB-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-7-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:07:00",
+            "ipv4": "10.0.2.10",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "10.0.2.1",
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [
+            {
+              "name": "HTTP",
+              "protocol": "TCP",
+              "port": 80,
+              "enabled": true
+            },
+            {
+              "name": "HTTPS",
+              "protocol": "TCP",
+              "port": 443,
+              "enabled": true
+            }
+          ],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-8",
+        "type": "server",
+        "name": "DNS-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-8-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:08:00",
+            "ipv4": "10.0.2.53",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "10.0.2.1",
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [
+            {
+              "name": "DNS",
+              "protocol": "UDP",
+              "port": 53,
+              "enabled": true
+            }
+          ],
+          "dns_records": [
+            {
+              "name": "web.netquest.local",
+              "type": "A",
+              "value": "10.0.2.99",
+              "priority": 10
+            },
+            {
+              "name": "www.netquest.local",
+              "type": "CNAME",
+              "value": "web.netquest.local",
+              "priority": 10
+            },
+            {
+              "name": "dns.netquest.local",
+              "type": "A",
+              "value": "10.0.2.53",
+              "priority": 10
+            },
+            {
+              "name": "netquest.local",
+              "type": "MX",
+              "value": "mail.netquest.local",
+              "priority": 10
+            }
+          ],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      }
+    ],
+    "links": [
+      {
+        "id": "lnk-0",
+        "a": {
+          "device_id": "dev-0",
+          "interface_id": "dev-0-eth0"
+        },
+        "b": {
+          "device_id": "dev-3",
+          "interface_id": "dev-3-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-1",
+        "a": {
+          "device_id": "dev-1",
+          "interface_id": "dev-1-eth0"
+        },
+        "b": {
+          "device_id": "dev-3",
+          "interface_id": "dev-3-eth1"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-2",
+        "a": {
+          "device_id": "dev-2",
+          "interface_id": "dev-2-eth0"
+        },
+        "b": {
+          "device_id": "dev-3",
+          "interface_id": "dev-3-eth2"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-3",
+        "a": {
+          "device_id": "dev-3",
+          "interface_id": "dev-3-eth3"
+        },
+        "b": {
+          "device_id": "dev-4",
+          "interface_id": "dev-4-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-4",
+        "a": {
+          "device_id": "dev-4",
+          "interface_id": "dev-4-eth1"
+        },
+        "b": {
+          "device_id": "dev-5",
+          "interface_id": "dev-5-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-5",
+        "a": {
+          "device_id": "dev-5",
+          "interface_id": "dev-5-eth1"
+        },
+        "b": {
+          "device_id": "dev-6",
+          "interface_id": "dev-6-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-6",
+        "a": {
+          "device_id": "dev-6",
+          "interface_id": "dev-6-eth1"
+        },
+        "b": {
+          "device_id": "dev-7",
+          "interface_id": "dev-7-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-7",
+        "a": {
+          "device_id": "dev-6",
+          "interface_id": "dev-6-eth2"
+        },
+        "b": {
+          "device_id": "dev-8",
+          "interface_id": "dev-8-eth0"
+        },
+        "status": "up"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "dns_resolves",
+      "device": "PC-01",
+      "name": "web.netquest.local",
+      "expects": "10.0.2.10"
+    },
+    {
+      "type": "service_reachable",
+      "source": "PC-01",
+      "destination": "web.netquest.local",
+      "port": 80,
+      "protocol": "TCP"
+    }
+  ]
+}

@@ -1,0 +1,475 @@
+{
+  "id": "nobody-answers-a-private-address",
+  "name": "Nobody Answers a Private Address",
+  "category": "security",
+  "difficulty": 4,
+  "xp": 350,
+  "level": 10,
+  "description": "Traffic reaches the internet and never comes back.",
+  "brief": "PC-01 sits in 192.168.1.0/24 — a private range that exists on countless networks at once, which is exactly why nothing on the wider internet knows how to route to it.\n\nWatch what happens: the request reaches SITE-01 quite happily. The reply is addressed to 192.168.1.10, and ISP-01 has never heard of that network, so it drops it.\n\nRouter-01 owns a real public address. Make the traffic leave wearing it.",
+  "hints": [
+    "Test PC-01 → 198.51.100.10 on port 80 and read where it stopped.",
+    "Which address is ISP-01 complaining that it has no route to?",
+    "Router-01 has a public address on the interface facing ISP-01.",
+    "Turn on NAT on Router-01 and pick that interface as the public one."
+  ],
+  "explanation": "Private addresses are not routable on the public internet — every network is free to use them, so they cannot be unique. The request arrived only because the reply had not been needed yet; the moment the server answered, the private source address became the problem.\n\nNAT solves it by rewriting the source to the router's own public address and remembering the swap, so the reply comes back to something the internet can actually route to and the router can put it back where it belongs. 'show ip nat translations' shows those bindings.",
+  "topology": {
+    "version": 1,
+    "name": "Untitled network",
+    "devices": [
+      {
+        "id": "dev-0",
+        "type": "pc",
+        "name": "PC-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-0-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:00:00",
+            "ipv4": "192.168.1.10",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "192.168.1.1",
+          "dns_server": "198.51.100.53",
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-1",
+        "type": "switch",
+        "name": "Switch-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-1-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:01:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-1-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:01:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-1-eth2",
+            "name": "eth2",
+            "mac": "02:00:5E:00:01:02",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-1-eth3",
+            "name": "eth3",
+            "mac": "02:00:5E:00:01:03",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-2",
+        "type": "router",
+        "name": "Router-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-2-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:02:00",
+            "ipv4": "192.168.1.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          },
+          {
+            "id": "dev-2-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:02:01",
+            "ipv4": "203.0.113.2",
+            "netmask": "255.255.255.252",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "203.0.113.1",
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-3",
+        "type": "router",
+        "name": "ISP-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-3-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:03:00",
+            "ipv4": "203.0.113.1",
+            "netmask": "255.255.255.252",
+            "enabled": true
+          },
+          {
+            "id": "dev-3-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:03:01",
+            "ipv4": "198.51.100.1",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-4",
+        "type": "switch",
+        "name": "Switch-02",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-4-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:04:00",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-4-eth1",
+            "name": "eth1",
+            "mac": "02:00:5E:00:04:01",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-4-eth2",
+            "name": "eth2",
+            "mac": "02:00:5E:00:04:02",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          },
+          {
+            "id": "dev-4-eth3",
+            "name": "eth3",
+            "mac": "02:00:5E:00:04:03",
+            "ipv4": null,
+            "netmask": null,
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": null,
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-5",
+        "type": "server",
+        "name": "SITE-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-5-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:05:00",
+            "ipv4": "198.51.100.10",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "198.51.100.1",
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [
+            {
+              "name": "HTTP",
+              "protocol": "TCP",
+              "port": 80,
+              "enabled": true
+            },
+            {
+              "name": "HTTPS",
+              "protocol": "TCP",
+              "port": 443,
+              "enabled": true
+            }
+          ],
+          "dns_records": [],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      },
+      {
+        "id": "dev-6",
+        "type": "server",
+        "name": "PUBDNS-01",
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "interfaces": [
+          {
+            "id": "dev-6-eth0",
+            "name": "eth0",
+            "mac": "02:00:5E:00:06:00",
+            "ipv4": "198.51.100.53",
+            "netmask": "255.255.255.0",
+            "enabled": true
+          }
+        ],
+        "config": {
+          "gateway": "198.51.100.1",
+          "dns_server": null,
+          "dhcp_client": false,
+          "static_routes": [],
+          "services": [
+            {
+              "name": "DNS",
+              "protocol": "UDP",
+              "port": 53,
+              "enabled": true
+            }
+          ],
+          "dns_records": [
+            {
+              "name": "shop.example.net",
+              "type": "A",
+              "value": "198.51.100.10",
+              "priority": 10
+            }
+          ],
+          "dhcp_pool": null,
+          "firewall_rules": [],
+          "firewall_default_policy": "allow",
+          "nat": null,
+          "vpn": null
+        },
+        "runtime": {
+          "arp_table": {},
+          "mac_table": {},
+          "dns_cache": {},
+          "dhcp_leases": {},
+          "firewall_hits": {}
+        }
+      }
+    ],
+    "links": [
+      {
+        "id": "lnk-0",
+        "a": {
+          "device_id": "dev-0",
+          "interface_id": "dev-0-eth0"
+        },
+        "b": {
+          "device_id": "dev-1",
+          "interface_id": "dev-1-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-1",
+        "a": {
+          "device_id": "dev-1",
+          "interface_id": "dev-1-eth1"
+        },
+        "b": {
+          "device_id": "dev-2",
+          "interface_id": "dev-2-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-2",
+        "a": {
+          "device_id": "dev-2",
+          "interface_id": "dev-2-eth1"
+        },
+        "b": {
+          "device_id": "dev-3",
+          "interface_id": "dev-3-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-3",
+        "a": {
+          "device_id": "dev-3",
+          "interface_id": "dev-3-eth1"
+        },
+        "b": {
+          "device_id": "dev-4",
+          "interface_id": "dev-4-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-4",
+        "a": {
+          "device_id": "dev-4",
+          "interface_id": "dev-4-eth1"
+        },
+        "b": {
+          "device_id": "dev-5",
+          "interface_id": "dev-5-eth0"
+        },
+        "status": "up"
+      },
+      {
+        "id": "lnk-5",
+        "a": {
+          "device_id": "dev-4",
+          "interface_id": "dev-4-eth2"
+        },
+        "b": {
+          "device_id": "dev-6",
+          "interface_id": "dev-6-eth0"
+        },
+        "status": "up"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "service_reachable",
+      "source": "PC-01",
+      "destination": "198.51.100.10",
+      "port": 80,
+      "protocol": "TCP"
+    },
+    {
+      "type": "ping_succeeds",
+      "source": "PC-01",
+      "destination": "198.51.100.10"
+    }
+  ]
+}

@@ -319,18 +319,25 @@ def _device_by_name(topology: TopologySchema, name: str | None) -> DeviceSchema 
 
 
 def _resolve_target(topology: TopologySchema, destination: str | None) -> str | None:
-    """A ping destination may be a literal address or a device name."""
+    """A ping destination may be an address, a device name, or a DNS name.
+
+    A DNS name is handed straight to the ping command, which resolves it through
+    the simulated DNS — so an objective written against a hostname genuinely
+    tests name resolution as well as connectivity.
+    """
     if not destination:
         return None
     if is_valid_ipv4(destination):
         return destination
+
     device = _device_by_name(topology, destination)
-    if device is None:
+    if device is not None:
+        for iface in device.interfaces:
+            if iface.enabled and is_valid_ipv4(iface.ipv4):
+                return iface.ipv4
         return None
-    for iface in device.interfaces:
-        if iface.enabled and is_valid_ipv4(iface.ipv4):
-            return iface.ipv4
-    return None
+
+    return destination
 
 
 def _result(

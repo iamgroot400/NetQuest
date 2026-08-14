@@ -12,6 +12,8 @@ const CATEGORY_LABEL: Record<ChallengeCategory, string> = {
   beginner: 'Getting started',
   switching: 'Switching',
   routing: 'Routing',
+  services: 'DNS & DHCP',
+  security: 'Firewalls, NAT & VPN',
   troubleshooting: 'Troubleshooting',
 }
 
@@ -19,6 +21,8 @@ const CATEGORY_ORDER: ChallengeCategory[] = [
   'beginner',
   'switching',
   'routing',
+  'services',
+  'security',
   'troubleshooting',
 ]
 

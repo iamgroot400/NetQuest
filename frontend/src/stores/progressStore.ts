@@ -24,11 +24,11 @@ export const LEVELS: LevelDefinition[] = [
   { level: 3, name: 'ARP', xp: 250, available: true },
   { level: 4, name: 'Switching', xp: 450, available: true },
   { level: 5, name: 'Routing', xp: 700, available: true },
-  { level: 6, name: 'VLANs', xp: 1100, available: false },
-  { level: 7, name: 'DHCP', xp: 1500, available: false },
-  { level: 8, name: 'DNS', xp: 2000, available: false },
-  { level: 9, name: 'NAT', xp: 2600, available: false },
-  { level: 10, name: 'ACLs', xp: 3300, available: false },
+  { level: 6, name: 'DNS', xp: 1150, available: true },
+  { level: 7, name: 'DHCP', xp: 1650, available: true },
+  { level: 8, name: 'Ports & Services', xp: 2100, available: true },
+  { level: 9, name: 'Firewalls', xp: 2550, available: true },
+  { level: 10, name: 'NAT & Tunnels', xp: 3100, available: true },
 ]
 
 export function levelForXp(xp: number): LevelDefinition {

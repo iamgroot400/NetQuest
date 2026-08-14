@@ -1,12 +1,14 @@
-import { Trophy, Unlock } from 'lucide-react'
+import { Lightbulb, Trophy, Unlock } from 'lucide-react'
 import { useEffect } from 'react'
 
 import { Button } from '@/components/ui/Button'
+import { useChallengeStore } from '@/stores/challengeStore'
 import { useProgressStore } from '@/stores/progressStore'
 
 export function MissionComplete() {
   const award = useProgressStore((state) => state.award)
   const dismiss = useProgressStore((state) => state.dismissAward)
+  const challenges = useChallengeStore((state) => state.challenges)
 
   useEffect(() => {
     if (!award) return
@@ -19,16 +21,19 @@ export function MissionComplete() {
 
   if (!award) return null
 
+  const explanation =
+    challenges.find((c) => c.id === award.challengeId)?.explanation ?? ''
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="mission-complete-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-base/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-base/80 p-4 backdrop-blur-sm"
       onClick={dismiss}
     >
       <div
-        className="w-full max-w-sm rounded-xl border border-ok/30 bg-panel p-6 text-center shadow-2xl"
+        className="my-auto w-full max-w-md rounded-xl border border-ok/30 bg-panel p-6 text-center shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-ok/10 text-ok">
@@ -65,6 +70,18 @@ export function MissionComplete() {
                 Unlocked: {name}
               </p>
             ))}
+          </div>
+        ) : null}
+
+        {explanation ? (
+          <div className="mt-5 rounded-md border border-line bg-surface p-3 text-left">
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-widest text-accent uppercase">
+              <Lightbulb size={12} />
+              What was going on
+            </h3>
+            <p className="text-[11.5px] leading-relaxed whitespace-pre-line text-ink-dim">
+              {explanation}
+            </p>
           </div>
         ) : null}
 

@@ -302,8 +302,19 @@ export type ObjectiveType =
   | 'in_subnet'
   | 'ping_succeeds'
   | 'ping_fails'
+  | 'dns_resolves'
+  | 'service_reachable'
+  | 'service_blocked'
+  | 'service_enabled'
+  | 'dhcp_assigns'
 
-export type ChallengeCategory = 'beginner' | 'switching' | 'routing' | 'troubleshooting'
+export type ChallengeCategory =
+  | 'beginner'
+  | 'switching'
+  | 'routing'
+  | 'troubleshooting'
+  | 'services'
+  | 'security'
 
 export interface Objective {
   type: ObjectiveType
@@ -320,6 +331,10 @@ export interface Objective {
   subnet: string | null
   source: string | null
   destination: string | null
+  name: string | null
+  expects: string | null
+  port: number | null
+  protocol: string
 }
 
 export interface Challenge {
@@ -332,6 +347,8 @@ export interface Challenge {
   description: string
   brief: string
   hints: string[]
+  /** Shown once solved: what happened, why, and what it teaches. */
+  explanation: string
   topology: TopologyDocument | null
   objectives: Objective[]
   requires: string[]
