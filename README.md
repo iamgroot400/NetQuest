@@ -30,22 +30,38 @@ Then open **http://localhost:3000**.
 
 ## What it does
 
-- **Topology editor** — drag PCs, switches, routers and servers onto a canvas,
-  cable them together, move, rename and delete them, zoom and pan.
+- **Topology editor** — drag PCs, switches, routers, firewalls, DNS servers,
+  DHCP servers and web servers onto a canvas, cable them together, move,
+  rename and delete them, zoom and pan.
 - **Real device configuration** — IPv4 addresses, subnet masks, default
-  gateways, per-interface shutdown, static routes on routers. Every field feeds
+  gateways, per-interface shutdown, static routes, listening services, DNS
+  zones, DHCP pools, firewall rules, NAT and VPN tunnels. Every field feeds
   the simulation.
 - **A real protocol engine** — Ethernet framing, MAC learning and flooding, ARP
   request/reply with a cache, IPv4 forwarding with longest-prefix matching and
-  TTL decrement, ICMP echo plus destination-unreachable and time-exceeded.
-- **Per-device terminals** — `ipconfig`, `ping`, `arp`, `show mac-address-table`,
-  `show ip route`, `show interfaces`, and more, all reading live state.
+  TTL decrement, ICMP echo plus destination-unreachable/time-exceeded, TCP/UDP
+  with a real SYN → SYN-ACK/RST handshake, DNS (A/CNAME/MX, CNAME chains,
+  NXDOMAIN), DHCP (DISCOVER/OFFER/REQUEST/ACK, pools, leases), a stateful
+  inline firewall, source NAT, and UDP-tunnelled VPN.
+- **Per-device terminals** — `ipconfig`, `ping`, `traceroute`, `nslookup`,
+  `dig`, `connect`, `curl`, `arp`, `ip addr`/`ip route`, `netstat`, `services`,
+  `dhcp renew`/`release`, `show mac-address-table`, `show ip route`,
+  `show access-list`, `show ip nat translations`, and more — all reading live
+  state.
+- **Connection Tester** — pick a source, a destination (address or name), a
+  port and a protocol, and get back exactly what happened: open, refused
+  (host said no), filtered (something in between dropped it silently),
+  unreachable, or a DNS failure — with the full path and where it stopped.
 - **Packet visualisation** — a hop-by-hop animation you can play, pause, step
-  and replay, with an event log and a packet inspector showing the real headers.
-- **Missions** — 11 data-driven challenges across building, switching, routing
-  and troubleshooting, validated by running the actual engine.
+  and replay, with an event log and a packet inspector showing the real
+  headers at every layer, including what rides inside a VPN tunnel.
+- **Missions** — 21 data-driven challenges across building, switching,
+  routing, DNS/DHCP, firewalls/NAT/VPN and troubleshooting, validated by
+  running the actual engine, each with a post-solve explanation of what
+  happened and why.
 - **XP and levels** — progress through Ethernet → IPv4 → ARP → Switching →
-  Routing, unlocking missions as you go.
+  Routing → DNS → DHCP → Ports & Services → Firewalls → NAT & Tunnels,
+  unlocking missions as you go.
 - **Save / load / export** — a topology is a plain JSON file.
 
 ## How the simulator works
