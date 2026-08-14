@@ -109,12 +109,56 @@ function PacketDetail({ packet }: { packet: PacketSnapshot }) {
           </Group>
         )}
 
+        {packet.transport_protocol ? (
+          <Group title={packet.transport_protocol}>
+            <Row label="Source port" value={packet.src_port} />
+            <Row label="Destination port" value={packet.dst_port} />
+            <Row label="Flag" value={packet.tcp_flag} />
+          </Group>
+        ) : null}
+
         {packet.icmp_type ? (
           <Group title="ICMP">
             <Row label="Type" value={packet.icmp_type} />
             <Row label="Code" value={packet.icmp_code} />
             <Row label="Identifier" value={packet.icmp_identifier} />
             <Row label="Sequence" value={packet.icmp_sequence} />
+          </Group>
+        ) : null}
+
+        {packet.dns_query_name ? (
+          <Group title="DNS">
+            <Row label="Question" value={packet.dns_query_name} />
+            <Row label="Type" value={packet.dns_query_type} />
+            <Row label="Status" value={packet.dns_status} />
+            {packet.dns_answers.length > 0 ? (
+              <div className="mt-1 border-t border-line-soft pt-1">
+                {packet.dns_answers.map((answer) => (
+                  <p key={answer} className="font-mono text-[10.5px] text-ink-dim">
+                    {answer}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+          </Group>
+        ) : null}
+
+        {packet.dhcp_type ? (
+          <Group title="DHCP">
+            <Row label="Message" value={packet.dhcp_type} />
+            <Row label="Offered address" value={packet.dhcp_offered_ip} />
+          </Group>
+        ) : null}
+
+        {packet.encapsulated ? (
+          <Group title="Inside the tunnel">
+            <p className="font-mono text-[11px] leading-relaxed text-ink-dim">
+              {packet.inner_summary}
+            </p>
+            <p className="mt-1 text-[10.5px] leading-relaxed text-ink-faint">
+              Anything inspecting this packet in transit sees only the outer UDP
+              header above — not this.
+            </p>
           </Group>
         ) : null}
 

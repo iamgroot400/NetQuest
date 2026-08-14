@@ -20,6 +20,16 @@ class ObjectiveType(str, Enum):
     IN_SUBNET = "in_subnet"
     PING_SUCCEEDS = "ping_succeeds"
     PING_FAILS = "ping_fails"
+    #: A name resolves through the simulated DNS, optionally to a given address.
+    DNS_RESOLVES = "dns_resolves"
+    #: A TCP/UDP port genuinely accepts a connection.
+    SERVICE_REACHABLE = "service_reachable"
+    #: …and the same test proving something is correctly *not* reachable.
+    SERVICE_BLOCKED = "service_blocked"
+    #: A device is listening on a port.
+    SERVICE_ENABLED = "service_enabled"
+    #: A client holds an address it was given by DHCP.
+    DHCP_ASSIGNS = "dhcp_assigns"
 
 
 class ObjectiveSchema(BaseModel):
@@ -47,6 +57,14 @@ class ObjectiveSchema(BaseModel):
     source: str | None = None
     destination: str | None = None
 
+    # dns_resolves — which host asks, for what, and optionally what it must get
+    name: str | None = None
+    expects: str | None = None
+
+    # service_reachable / service_blocked / service_enabled
+    port: int | None = None
+    protocol: str = "TCP"
+
 
 class ChallengeCategory(str, Enum):
     BEGINNER = "beginner"
@@ -68,6 +86,8 @@ class ChallengeSchema(BaseModel):
     #: Longer scenario text shown in the mission briefing.
     brief: str = ""
     hints: list[str] = Field(default_factory=list)
+    #: Shown once the mission is solved: what happened, why, and what it teaches.
+    explanation: str = ""
     #: Starting topology. Null means "start from an empty canvas".
     topology: TopologySchema | None = None
     objectives: list[ObjectiveSchema] = Field(default_factory=list)

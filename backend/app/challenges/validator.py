@@ -19,7 +19,7 @@ from ..simulation.core.addressing import (
     is_valid_netmask,
     same_subnet,
 )
-from ..simulation.runner import run_command
+from ..simulation.runner import run_command, run_connection_test
 
 
 def validate(challenge: ChallengeSchema, topology: TopologySchema) -> ChallengeValidationResponse:
@@ -178,6 +178,118 @@ def _ping(objective: ObjectiveSchema, topology: TopologySchema) -> tuple[bool, s
     return reached == want_success, detail
 
 
+def _dns_resolves(objective: ObjectiveSchema, topology: TopologySchema) -> tuple[bool, str]:
+    device = _device_by_name(topology, objective.device)
+    if device is None:
+        return False, f"{objective.device} is not on the canvas yet."
+    if not objective.name:
+        return False, "The challenge does not say which name to resolve."
+
+    result = run_command(topology, device.id, f"nslookup {objective.name}")
+    if not result.success:
+        detail = next(
+            (line for line in result.output if "can't find" in line or "no response" in line),
+            f"{device.name} could not resolve {objective.name}.",
+        )
+        return False, detail.strip()
+
+    address = next(
+        (line.split(":", 1)[1].strip() for line in result.output if line.startswith("Address:")),
+        None,
+    )
+    # The first "Address:" line is the server; the last is the answer.
+    answers = [
+        line.split(":", 1)[1].strip()
+        for line in result.output
+        if line.startswith("Address:")
+    ]
+    address = answers[-1] if answers else address
+
+    if objective.expects and address != objective.expects:
+        return False, (
+            f"{objective.name} resolves to {address}, but it should be {objective.expects}."
+        )
+    return True, f"{objective.name} resolves to {address}."
+
+
+def _service_check(objective: ObjectiveSchema, topology: TopologySchema) -> tuple[bool, str]:
+    source = _device_by_name(topology, objective.source)
+    if source is None:
+        return False, f"{objective.source} is not on the canvas yet."
+    if objective.port is None:
+        return False, "The challenge does not say which port to test."
+
+    destination = objective.destination or ""
+    result = run_connection_test(
+        topology, source.id, destination, objective.port, objective.protocol
+    )
+    want_reachable = objective.type is ObjectiveType.SERVICE_REACHABLE
+
+    label = f"{destination} on {objective.port}/{objective.protocol.lower()}"
+    if result.reachable == want_reachable:
+        detail = (
+            f"{source.name} can reach {label}."
+            if want_reachable
+            else f"{source.name} correctly cannot reach {label} ({result.outcome})."
+        )
+        return True, detail
+
+    if want_reachable:
+        where = f" — stopped at {result.blocked_at}" if result.blocked_at else ""
+        return False, f"{source.name} cannot reach {label}: {result.outcome}{where}."
+    return False, f"{source.name} can still reach {label}."
+
+
+def _service_enabled(objective: ObjectiveSchema, topology: TopologySchema) -> tuple[bool, str]:
+    device = _device_by_name(topology, objective.device)
+    if device is None:
+        return False, f"{objective.device} is not on the canvas yet."
+    if objective.port is None:
+        return False, "The challenge does not say which port to check."
+
+    wanted = objective.protocol.upper()
+    listening = [
+        s
+        for s in device.config.services
+        if s.enabled and s.port == objective.port and s.protocol.upper() == wanted
+    ]
+    if listening:
+        return True, f"{device.name} is listening on {objective.port}/{wanted.lower()}."
+    return False, (
+        f"{device.name} is not listening on {objective.port}/{wanted.lower()}."
+    )
+
+
+def _dhcp_assigns(objective: ObjectiveSchema, topology: TopologySchema) -> tuple[bool, str]:
+    device = _device_by_name(topology, objective.device)
+    if device is None:
+        return False, f"{objective.device} is not on the canvas yet."
+    if not device.config.dhcp_client:
+        return False, f"{device.name} is not set to obtain its address automatically."
+
+    addressed = [i for i in device.interfaces if is_valid_ipv4(i.ipv4)]
+    if not addressed:
+        return False, (
+            f"{device.name} has no address yet — run 'dhcp renew' in its terminal."
+        )
+
+    iface = addressed[0]
+    assert iface.ipv4
+    if objective.subnet:
+        mask = objective.netmask or iface.netmask or "255.255.255.0"
+        if not same_subnet(iface.ipv4, objective.subnet, mask):
+            return False, (
+                f"{device.name} was given {iface.ipv4}, which is not inside "
+                f"{objective.subnet}."
+            )
+    if objective.gateway and device.config.gateway != objective.gateway:
+        return False, (
+            f"{device.name} was given gateway "
+            f"{device.config.gateway or 'none'}, expected {objective.gateway}."
+        )
+    return True, f"{device.name} holds {iface.ipv4} from DHCP."
+
+
 _HANDLERS = {
     ObjectiveType.DEVICE_EXISTS: _device_exists,
     ObjectiveType.LINK_EXISTS: _link_exists,
@@ -185,6 +297,11 @@ _HANDLERS = {
     ObjectiveType.IN_SUBNET: _in_subnet,
     ObjectiveType.PING_SUCCEEDS: _ping,
     ObjectiveType.PING_FAILS: _ping,
+    ObjectiveType.DNS_RESOLVES: _dns_resolves,
+    ObjectiveType.SERVICE_REACHABLE: _service_check,
+    ObjectiveType.SERVICE_BLOCKED: _service_check,
+    ObjectiveType.SERVICE_ENABLED: _service_enabled,
+    ObjectiveType.DHCP_ASSIGNS: _dhcp_assigns,
 }
 
 
@@ -256,4 +373,25 @@ def describe(objective: ObjectiveSchema) -> str:
             return f"{objective.source} can ping {objective.destination}"
         case ObjectiveType.PING_FAILS:
             return f"{objective.source} cannot reach {objective.destination}"
+        case ObjectiveType.DNS_RESOLVES:
+            target = f" to {objective.expects}" if objective.expects else ""
+            return f"{objective.device} can resolve {objective.name}{target}"
+        case ObjectiveType.SERVICE_REACHABLE:
+            return (
+                f"{objective.source} can reach {objective.destination} on "
+                f"{objective.port}/{objective.protocol.lower()}"
+            )
+        case ObjectiveType.SERVICE_BLOCKED:
+            return (
+                f"{objective.source} cannot reach {objective.destination} on "
+                f"{objective.port}/{objective.protocol.lower()}"
+            )
+        case ObjectiveType.SERVICE_ENABLED:
+            return (
+                f"{objective.device} is listening on "
+                f"{objective.port}/{objective.protocol.lower()}"
+            )
+        case ObjectiveType.DHCP_ASSIGNS:
+            where = f" inside {objective.subnet}" if objective.subnet else ""
+            return f"{objective.device} gets its address from DHCP{where}"
     return "Objective"  # pragma: no cover

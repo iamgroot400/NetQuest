@@ -15,10 +15,11 @@ const LINE_CLASS: Record<LineKind, string> = {
 }
 
 const SUGGESTIONS: Record<string, string[]> = {
-  pc: ['ipconfig', 'ping ', 'arp', 'netstat', 'help'],
-  server: ['ipconfig', 'ping ', 'arp', 'netstat', 'help'],
+  pc: ['ipconfig', 'ping ', 'traceroute ', 'nslookup ', 'connect ', 'arp', 'dhcp renew', 'help'],
+  server: ['ipconfig', 'netstat', 'services', 'ping ', 'nslookup ', 'arp', 'help'],
   switch: ['show mac-address-table', 'show interfaces', 'clear mac-address-table', 'help'],
-  router: ['show ip route', 'show interfaces', 'show arp', 'ping ', 'help'],
+  router: ['show ip route', 'show interfaces', 'show ip nat translations', 'show arp', 'ping ', 'help'],
+  firewall: ['show access-list', 'show interfaces', 'clear counters', 'help'],
 }
 
 export function Terminal() {
