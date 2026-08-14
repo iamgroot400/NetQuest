@@ -1,7 +1,15 @@
-import { Activity, ChevronDown, ChevronUp, Package, TerminalIcon } from 'lucide-react'
+import {
+  Activity,
+  ChevronDown,
+  ChevronUp,
+  Package,
+  Radar,
+  TerminalIcon,
+} from 'lucide-react'
 
 import { IconButton } from '@/components/ui/Button'
 import { Tabs, type TabDefinition } from '@/components/ui/Tabs'
+import { ConnectionTester } from '@/features/packets/ConnectionTester'
 import { EventLog } from '@/features/packets/EventLog'
 import { PacketInspector } from '@/features/packets/PacketInspector'
 import { Terminal } from '@/features/terminal/Terminal'
@@ -19,6 +27,7 @@ export function BottomDock() {
 
   const tabs: TabDefinition<BottomTab>[] = [
     { id: 'terminal', label: 'Terminal', icon: <TerminalIcon size={12} /> },
+    { id: 'connect', label: 'Connection Test', icon: <Radar size={12} /> },
     { id: 'events', label: 'Events', icon: <Activity size={12} />, badge: eventCount },
     { id: 'packets', label: 'Packets', icon: <Package size={12} />, badge: packetCount },
   ]
@@ -43,6 +52,7 @@ export function BottomDock() {
       {open ? (
         <div className="min-h-0 flex-1">
           {tab === 'terminal' ? <Terminal /> : null}
+          {tab === 'connect' ? <ConnectionTester /> : null}
           {tab === 'events' ? <EventLog /> : null}
           {tab === 'packets' ? <PacketInspector /> : null}
         </div>

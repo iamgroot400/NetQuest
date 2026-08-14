@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 
-export type BottomTab = 'terminal' | 'events' | 'packets'
+export type BottomTab = 'terminal' | 'connect' | 'events' | 'packets'
 export type RightTab = 'config' | 'mission'
 
 export interface Toast {

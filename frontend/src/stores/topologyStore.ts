@@ -67,19 +67,22 @@ function patchDevice(devices: Device[], deviceId: string, fn: (device: Device) =
   return devices.map((device) => (device.id === deviceId ? fn(device) : device))
 }
 
+function emptyRuntime() {
+  return {
+    arp_table: {},
+    mac_table: {},
+    dns_cache: {},
+    dhcp_leases: {},
+    firewall_hits: {},
+  }
+}
+
 /** Fill in anything a document is missing, so older saved files keep working. */
 export function normalizeDevice(device: Device): Device {
   return {
     ...device,
     config: { ...emptyConfig(), ...(device.config ?? {}) },
-    runtime: {
-      arp_table: {},
-      mac_table: {},
-      dns_cache: {},
-      dhcp_leases: {},
-      firewall_hits: {},
-      ...(device.runtime ?? {}),
-    },
+    runtime: { ...emptyRuntime(), ...(device.runtime ?? {}) },
   }
 }
 
@@ -240,13 +243,7 @@ export const useTopologyStore = create<TopologyState>()(
         set((state) => ({
           devices: state.devices.map((device) => ({
             ...device,
-            runtime: {
-              arp_table: {},
-              mac_table: {},
-              dns_cache: {},
-              dhcp_leases: {},
-              firewall_hits: {},
-            },
+            runtime: emptyRuntime(),
           })),
         })),
 
@@ -300,13 +297,7 @@ export function toExportDocument(state = useTopologyStore.getState()): TopologyD
     ...toDocument(state),
     devices: state.devices.map((device) => ({
       ...device,
-      runtime: {
-        arp_table: {},
-        mac_table: {},
-        dns_cache: {},
-        dhcp_leases: {},
-        firewall_hits: {},
-      },
+      runtime: emptyRuntime(),
     })),
   }
 }

@@ -2,7 +2,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button, IconButton } from '@/components/ui/Button'
-import { SectionTitle, TextInput } from '@/components/ui/Field'
+import { Field, SectionTitle, TextInput } from '@/components/ui/Field'
 import { isValidIpv4, isValidNetmask } from '@/lib/net'
 import { useTopologyStore } from '@/stores/topologyStore'
 import type { Device, StaticRoute } from '@/types'
@@ -13,6 +13,7 @@ const BLANK: StaticRoute = { destination: '', netmask: '255.255.255.0', gateway:
 
 export function RouterConfig({ device }: { device: Device }) {
   const setStaticRoutes = useTopologyStore((state) => state.setStaticRoutes)
+  const updateConfig = useTopologyStore((state) => state.updateConfig)
   const [draft, setDraft] = useState<StaticRoute>(BLANK)
 
   const routes = device.config.static_routes
@@ -32,6 +33,11 @@ export function RouterConfig({ device }: { device: Device }) {
       device.id,
       routes.filter((_, i) => i !== index),
     )
+
+  const nat = device.config.nat
+  const outsideInterface = device.interfaces.find(
+    (i) => i.id === nat?.outside_interface_id,
+  )
 
   return (
     <div className="space-y-4">
@@ -113,6 +119,68 @@ export function RouterConfig({ device }: { device: Device }) {
             <Plus size={13} />
             Add route
           </Button>
+        </div>
+      </section>
+
+      <section>
+        <SectionTitle>NAT</SectionTitle>
+        <div className="space-y-2.5 rounded-md border border-line bg-panel p-3">
+          <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+            <input
+              type="checkbox"
+              checked={!!nat?.enabled}
+              onChange={(event) =>
+                updateConfig(device.id, {
+                  nat: {
+                    enabled: event.target.checked,
+                    outside_interface_id:
+                      nat?.outside_interface_id ??
+                      device.interfaces[device.interfaces.length - 1]?.id ??
+                      null,
+                  },
+                })
+              }
+              className="h-3 w-3 accent-[var(--color-accent)]"
+            />
+            Translate private addresses on the way out
+          </label>
+
+          {nat?.enabled ? (
+            <>
+              <Field label="Public-facing interface">
+                <select
+                  value={nat.outside_interface_id ?? ''}
+                  onChange={(event) =>
+                    updateConfig(device.id, {
+                      nat: { ...nat, outside_interface_id: event.target.value || null },
+                    })
+                  }
+                  className="h-9 w-full rounded-md border border-line bg-surface px-2 font-mono text-sm text-ink"
+                >
+                  <option value="">Choose an interface…</option>
+                  {device.interfaces.map((iface) => (
+                    <option key={iface.id} value={iface.id}>
+                      {iface.name} {iface.ipv4 ? `(${iface.ipv4})` : '(no address)'}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <p className="text-[10.5px] leading-relaxed text-ink-faint">
+                Traffic leaving {outsideInterface?.name ?? 'this interface'} will
+                appear to come from{' '}
+                <span className="font-mono text-ink-dim">
+                  {outsideInterface?.ipv4 ?? 'its address'}
+                </span>
+                , so the far side never sees the private network and needs no route
+                back to it.
+              </p>
+            </>
+          ) : (
+            <p className="text-[10.5px] leading-relaxed text-ink-faint">
+              Off. Private addresses leave the router unchanged, so anything
+              beyond it needs a route back to reply.
+            </p>
+          )}
         </div>
       </section>
     </div>

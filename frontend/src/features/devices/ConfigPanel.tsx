@@ -3,13 +3,28 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
 import { Empty, Field, SectionTitle, TextInput } from '@/components/ui/Field'
-import { DEVICE_PROFILES } from '@/lib/devices'
+import { deviceRole } from '@/lib/devices'
+import { visualFor } from '@/lib/deviceVisuals'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useValidationStore } from '@/stores/validationStore'
 
+import { FirewallConfig } from './FirewallConfig'
 import { HostConfig } from './HostConfig'
 import { RouterConfig } from './RouterConfig'
 import { SwitchConfig } from './SwitchConfig'
+
+/** Human labels for the role a device is currently playing. */
+const ROLE_LABELS: Record<string, string> = {
+  pc: 'PC',
+  switch: 'Switch',
+  router: 'Router',
+  firewall: 'Firewall',
+  server: 'Server',
+  'web-server': 'Web Server',
+  'dns-server': 'DNS Server',
+  'dhcp-server': 'DHCP Server',
+  'vpn-server': 'VPN Gateway',
+}
 
 export function ConfigPanel() {
   const selectedDeviceId = useTopologyStore((state) => state.selectedDeviceId)
@@ -45,7 +60,9 @@ function DeviceConfig({ deviceId }: { deviceId: string }) {
   useEffect(() => setName(device?.name ?? ''), [device?.id, device?.name])
 
   if (!device) return null
-  const profile = DEVICE_PROFILES[device.type]
+  const role = deviceRole(device)
+  const visual = visualFor(device)
+  const RoleIcon = visual.icon
 
   const commitName = () => {
     const trimmed = name.trim()
@@ -55,26 +72,35 @@ function DeviceConfig({ deviceId }: { deviceId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-line px-3 py-3">
-        <Field
-        label={profile.label}
-        hint={
-          <span>
-            {device.interfaces.length} port{device.interfaces.length === 1 ? '' : 's'}
-          </span>
-        }
-      >
-          <TextInput
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            onBlur={commitName}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.currentTarget.blur()
-              if (event.key === 'Escape') setName(device.name)
-            }}
-            className="!font-sans !text-[13px] !font-semibold"
-          />
-        </Field>
+      <div className="flex items-end gap-2 border-b border-line px-3 py-3">
+        <span
+          className={`mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${visual.chip} ${visual.text}`}
+          title={ROLE_LABELS[role] ?? device.type}
+        >
+          <RoleIcon size={17} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <Field
+            label={ROLE_LABELS[role] ?? device.type}
+            hint={
+              <span>
+                {device.interfaces.length} port
+                {device.interfaces.length === 1 ? '' : 's'}
+              </span>
+            }
+          >
+            <TextInput
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              onBlur={commitName}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.currentTarget.blur()
+                if (event.key === 'Escape') setName(device.name)
+              }}
+              className="!font-sans !text-[13px] !font-semibold"
+            />
+          </Field>
+        </span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
@@ -100,6 +126,8 @@ function DeviceConfig({ deviceId }: { deviceId: string }) {
           <SwitchConfig device={device} />
         ) : device.type === 'router' ? (
           <RouterConfig device={device} />
+        ) : device.type === 'firewall' ? (
+          <FirewallConfig device={device} />
         ) : (
           <HostConfig device={device} />
         )}
