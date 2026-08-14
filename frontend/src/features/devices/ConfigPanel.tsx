@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
 import { Empty, Field, SectionTitle, TextInput } from '@/components/ui/Field'
+import { cableEndpoints } from '@/lib/cableLabel'
 import { deviceRole } from '@/lib/devices'
 import { visualFor } from '@/lib/deviceVisuals'
 import { useTopologyStore } from '@/stores/topologyStore'
@@ -156,12 +157,7 @@ function LinkConfig({ linkId }: { linkId: string }) {
 
   if (!link) return <Empty>That cable no longer exists.</Empty>
 
-  const describe = (end: { device_id: string; interface_id: string }) => {
-    const device = devices.find((d) => d.id === end.device_id)
-    const iface = device?.interfaces.find((i) => i.id === end.interface_id)
-    return `${device?.name ?? 'unknown'} · ${iface?.name ?? '?'}`
-  }
-
+  const { a, b } = cableEndpoints(link, devices)
   const connected = link.status === 'up'
 
   return (
@@ -169,9 +165,15 @@ function LinkConfig({ linkId }: { linkId: string }) {
       <div className="border-b border-line px-3 py-3">
         <SectionTitle>Cable</SectionTitle>
         <div className="space-y-1 font-mono text-[12px] text-ink-dim">
-          <div>{describe(link.a)}</div>
+          <div>
+            {a.device?.name ?? 'unknown'}{' '}
+            <span className="text-ink-faint">{a.interfaceName}</span>
+          </div>
           <div className="text-ink-faint">↕</div>
-          <div>{describe(link.b)}</div>
+          <div>
+            {b.device?.name ?? 'unknown'}{' '}
+            <span className="text-ink-faint">{b.interfaceName}</span>
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 import { EdgeLabelRenderer, getStraightPath, type EdgeProps } from '@xyflow/react'
 import { memo } from 'react'
 
+import { shortCableLabel } from '@/lib/cableLabel'
 import { TONE_HEX, packetTone } from '@/lib/packets'
 import { useSimulationStore } from '@/stores/simulationStore'
 import { useTopologyStore } from '@/stores/topologyStore'
@@ -43,14 +44,7 @@ function CableEdgeComponent({
 
   const stroke = isDown ? 'var(--color-bad)' : selected ? 'var(--color-accent)' : 'var(--color-line)'
 
-  const portLabel = (() => {
-    if (!link || !selected) return null
-    const find = (deviceId: string, interfaceId: string) => {
-      const device = devices.find((d) => d.id === deviceId)
-      return device?.interfaces.find((i) => i.id === interfaceId)?.name ?? '?'
-    }
-    return `${find(link.a.device_id, link.a.interface_id)} ↔ ${find(link.b.device_id, link.b.interface_id)}`
-  })()
+  const portLabel = link && selected ? shortCableLabel(link, devices) : null
 
   return (
     <>

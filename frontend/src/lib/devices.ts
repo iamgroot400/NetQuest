@@ -274,6 +274,39 @@ export function firstFreeInterface(
   return device.interfaces.find((i) => !used.has(i.id)) ?? null
 }
 
+/** A fresh interface named after the device's next free `ethN` slot. */
+export function addInterface(device: Device): NetworkInterface {
+  const existingNumbers = device.interfaces
+    .map((i) => Number(i.name.replace(/^eth/, '')))
+    .filter((n) => !Number.isNaN(n))
+  const next = existingNumbers.length ? Math.max(...existingNumbers) + 1 : 0
+  const preset = PRESET_BY_TYPE[device.type]
+  return {
+    id: `${device.id}-eth${next}`,
+    name: `eth${next}`,
+    mac: generateMac(),
+    ipv4: null,
+    netmask: preset?.addressable ? '255.255.255.0' : null,
+    enabled: true,
+  }
+}
+
+/**
+ * A free interface to cable up, growing the device with a new port if it has
+ * none spare. Real hardware has a fixed port count; this simulator would
+ * rather stay open to any topology than block a connection on a technicality.
+ */
+export function freeInterfaceOrGrow(
+  device: Device,
+  links: Link[],
+): { interface: NetworkInterface; device: Device } {
+  const existing = firstFreeInterface(device, links)
+  if (existing) return { interface: existing, device }
+
+  const created = addInterface(device)
+  return { interface: created, device: { ...device, interfaces: [...device.interfaces, created] } }
+}
+
 export function interfaceOf(device: Device, interfaceId: string): NetworkInterface | null {
   return device.interfaces.find((i) => i.id === interfaceId) ?? null
 }

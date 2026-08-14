@@ -8,7 +8,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import { createDevice, createLink, emptyConfig, firstFreeInterface } from '@/lib/devices'
+import { createDevice, createLink, emptyConfig, freeInterfaceOrGrow } from '@/lib/devices'
 import type {
   Device,
   DeviceConfig,
@@ -171,20 +171,24 @@ export const useTopologyStore = create<TopologyState>()(
           return { ok: false, reason: 'One of those devices no longer exists.' }
         }
 
-        const sourcePort = firstFreeInterface(source, links)
-        if (!sourcePort) {
-          return { ok: false, reason: `${source.name} has no free ports left.` }
-        }
-        const targetPort = firstFreeInterface(target, links)
-        if (!targetPort) {
-          return { ok: false, reason: `${target.name} has no free ports left.` }
-        }
+        // Any device can be cabled to any other, any number of times — a
+        // server to two switches, two switches to each other twice over. If a
+        // device has no spare port, it grows one rather than blocking the cable.
+        const sourceGrown = freeInterfaceOrGrow(source, links)
+        const targetGrown = freeInterfaceOrGrow(target, links)
 
         const link = createLink(
-          { deviceId: source.id, interfaceId: sourcePort.id },
-          { deviceId: target.id, interfaceId: targetPort.id },
+          { deviceId: source.id, interfaceId: sourceGrown.interface.id },
+          { deviceId: target.id, interfaceId: targetGrown.interface.id },
         )
-        set((state) => ({ links: [...state.links, link] }))
+        set((state) => ({
+          devices: state.devices.map((d) => {
+            if (d.id === source.id) return sourceGrown.device
+            if (d.id === target.id) return targetGrown.device
+            return d
+          }),
+          links: [...state.links, link],
+        }))
         return { ok: true, link }
       },
 
