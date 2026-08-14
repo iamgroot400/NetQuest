@@ -1,5 +1,5 @@
-import { EdgeLabelRenderer, getStraightPath, type EdgeProps } from '@xyflow/react'
-import { memo } from 'react'
+import { EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
+import { memo, useRef } from 'react'
 
 import { shortCableLabel } from '@/lib/cableLabel'
 import { TONE_HEX, packetTone } from '@/lib/packets'
@@ -9,19 +9,36 @@ import { useTopologyStore } from '@/stores/topologyStore'
 /**
  * A cable, plus the packet currently crossing it.
  *
- * Paths are straight, so the travelling dot is a plain interpolation between
- * the two endpoints — no path measurement, and it stays exact at any zoom.
+ * Rendered as a bezier curve — leaving each node from the side its handle
+ * actually sits on — rather than a dead-straight line, so several cables
+ * converging on one device fan out instead of stacking into a single point.
+ *
+ * The travelling dot is positioned with `getPointAtLength` on the real
+ * rendered path rather than a linear guess, so it stays glued to the curve
+ * no matter how it bends.
  */
 function CableEdgeComponent({
   id,
   source,
   sourceX,
   sourceY,
+  sourcePosition,
   targetX,
   targetY,
+  targetPosition,
   selected,
 }: EdgeProps) {
-  const [path, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY })
+  const [path, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    curvature: 0.3,
+  })
+
+  const pathRef = useRef<SVGPathElement>(null)
 
   const link = useTopologyStore((state) => state.links.find((l) => l.id === id))
   const devices = useTopologyStore((state) => state.devices)
@@ -39,8 +56,15 @@ function CableEdgeComponent({
   // `source` is the React Flow node id, which is the device id.
   const forward = transit ? transit.fromDeviceId === source : true
   const t = transit ? (forward ? transit.progress : 1 - transit.progress) : 0
-  const dotX = sourceX + (targetX - sourceX) * t
-  const dotY = sourceY + (targetY - sourceY) * t
+
+  let dotX = sourceX
+  let dotY = sourceY
+  if (transit && pathRef.current) {
+    const length = pathRef.current.getTotalLength()
+    const point = pathRef.current.getPointAtLength(t * length)
+    dotX = point.x
+    dotY = point.y
+  }
 
   const stroke = isDown ? 'var(--color-bad)' : selected ? 'var(--color-accent)' : 'var(--color-line)'
 
@@ -48,8 +72,8 @@ function CableEdgeComponent({
 
   return (
     <>
-      {/* Invisible fat path so the cable is easy to click. */}
-      <path d={path} fill="none" stroke="transparent" strokeWidth={16} />
+      {/* Invisible fat path so the cable is easy to click; also what the dot tracks. */}
+      <path ref={pathRef} d={path} fill="none" stroke="transparent" strokeWidth={16} />
       <path
         d={path}
         fill="none"
