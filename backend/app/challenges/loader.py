@@ -38,10 +38,26 @@ def load_from(directory: Path) -> dict[str, ChallengeSchema]:
         if challenge.id in challenges:
             logger.error("Duplicate challenge id '%s' in %s — skipped", challenge.id, path)
             continue
+
+        _fill_objective_descriptions(challenge)
         challenges[challenge.id] = challenge
 
     logger.info("Loaded %d challenges from %s", len(challenges), directory)
     return challenges
+
+
+def _fill_objective_descriptions(challenge: ChallengeSchema) -> None:
+    """Give every objective readable text up front.
+
+    Challenge files leave `description` out and let it be generated, but the
+    briefing panel shows objectives before anything has been validated — so the
+    text has to exist on the challenge itself, not only in a check result.
+    """
+    from .validator import describe
+
+    for objective in challenge.objectives:
+        if not objective.description:
+            objective.description = describe(objective)
 
 
 def all_challenges() -> dict[str, ChallengeSchema]:
