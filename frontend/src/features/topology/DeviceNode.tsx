@@ -1,29 +1,14 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { Monitor, Network, Router, Server, TriangleAlert } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
 import { memo } from 'react'
 
-import { useTopologyStore } from '@/stores/topologyStore'
+import { deviceSubtitle, visualFor } from '@/lib/deviceVisuals'
 import { activeDeviceIds, useSimulationStore } from '@/stores/simulationStore'
+import { useTopologyStore } from '@/stores/topologyStore'
 import { useValidationStore } from '@/stores/validationStore'
-import type { DeviceType } from '@/types'
 
 export interface DeviceNodeData extends Record<string, unknown> {
   deviceId: string
-}
-
-const ICONS: Record<DeviceType, typeof Monitor> = {
-  pc: Monitor,
-  switch: Network,
-  router: Router,
-  server: Server,
-}
-
-/** Matches the CSS custom properties so every surface agrees on device colour. */
-const ACCENTS: Record<DeviceType, { text: string; ring: string; chip: string }> = {
-  pc: { text: 'text-pc', ring: 'ring-pc/60', chip: 'bg-pc/10' },
-  switch: { text: 'text-switch', ring: 'ring-switch/60', chip: 'bg-switch/10' },
-  router: { text: 'text-router', ring: 'ring-router/60', chip: 'bg-router/10' },
-  server: { text: 'text-server', ring: 'ring-server/60', chip: 'bg-server/10' },
 }
 
 const HANDLES = [
@@ -42,32 +27,28 @@ function DeviceNodeComponent({ data, selected }: NodeProps) {
   const isActive = useSimulationStore((state) =>
     activeDeviceIds(state).includes(deviceId),
   )
-  const errorCount = useValidationStore(
-    (state) =>
-      state.issues.filter((i) => i.device_id === deviceId && i.severity === 'error')
-        .length,
-  )
+  const issues = useValidationStore((state) => state.issues)
 
   if (!device) return null
 
-  const Icon = ICONS[device.type]
-  const accent = ACCENTS[device.type]
-  const addressed = device.interfaces.find((i) => i.ipv4)
-  const subtitle =
-    device.type === 'switch'
-      ? `${device.interfaces.length} ports`
-      : (addressed?.ipv4 ?? 'no address')
+  const errorCount = issues.filter(
+    (i) => i.device_id === deviceId && i.severity === 'error',
+  ).length
+  const visual = visualFor(device)
+  const Icon = visual.icon
+  const openPorts = device.config.services.filter((s) => s.enabled).length
+  const isDown = device.interfaces.length > 0 && device.interfaces.every((i) => !i.enabled)
 
   return (
     <div
-      className={`group relative w-[152px] rounded-lg border bg-panel px-2.5 py-2 shadow-lg transition-colors ${
+      className={`group relative w-[158px] rounded-lg border bg-panel px-2.5 py-2 shadow-lg transition-colors ${
         selected ? 'border-accent' : 'border-line hover:border-ink-faint'
-      }`}
+      } ${isDown ? 'opacity-55' : ''}`}
     >
       {isActive ? (
         <span
           aria-hidden
-          className={`nq-active-ring pointer-events-none absolute -inset-1 rounded-xl ring-2 ${accent.ring}`}
+          className={`nq-active-ring pointer-events-none absolute -inset-1 rounded-xl ring-2 ${visual.ring}`}
         />
       ) : null}
 
@@ -84,7 +65,7 @@ function DeviceNodeComponent({ data, selected }: NodeProps) {
 
       <div className="flex items-center gap-2">
         <span
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${accent.chip} ${accent.text}`}
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${visual.chip} ${visual.text}`}
         >
           <Icon size={15} strokeWidth={2} />
         </span>
@@ -93,7 +74,7 @@ function DeviceNodeComponent({ data, selected }: NodeProps) {
             {device.name}
           </span>
           <span className="block truncate font-mono text-[11px] leading-tight text-ink-faint">
-            {subtitle}
+            {deviceSubtitle(device)}
           </span>
         </span>
         {errorCount > 0 ? (
@@ -105,6 +86,23 @@ function DeviceNodeComponent({ data, selected }: NodeProps) {
           </span>
         ) : null}
       </div>
+
+      {openPorts > 0 ? (
+        <div className="mt-1.5 flex flex-wrap gap-1 border-t border-line-soft pt-1.5">
+          {device.config.services
+            .filter((s) => s.enabled)
+            .slice(0, 4)
+            .map((service) => (
+              <span
+                key={`${service.protocol}-${service.port}`}
+                title={`${service.name} on ${service.port}/${service.protocol.toLowerCase()}`}
+                className="rounded bg-raised px-1 font-mono text-[9px] text-ink-faint"
+              >
+                {service.port}
+              </span>
+            ))}
+        </div>
+      ) : null}
     </div>
   )
 }

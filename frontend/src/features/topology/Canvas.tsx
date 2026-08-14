@@ -14,10 +14,10 @@ import {
 } from '@xyflow/react'
 import { useCallback, useMemo, type DragEvent } from 'react'
 
-import { DEVICE_PROFILES } from '@/lib/devices'
+import { visualFor } from '@/lib/deviceVisuals'
+import { PRESETS_BY_ID } from '@/lib/devices'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useUiStore } from '@/stores/uiStore'
-import type { DeviceType } from '@/types'
 
 import { CableEdge } from './CableEdge'
 import { DeviceNode, type DeviceNodeData } from './DeviceNode'
@@ -25,13 +25,6 @@ import { PALETTE_MIME } from './DevicePalette'
 
 const nodeTypes = { device: DeviceNode }
 const edgeTypes = { cable: CableEdge }
-
-const MINIMAP_COLOURS: Record<DeviceType, string> = {
-  pc: '#60a5fa',
-  switch: '#a78bfa',
-  router: '#fbbf24',
-  server: '#34d399',
-}
 
 export function Canvas() {
   const devices = useTopologyStore((state) => state.devices)
@@ -105,11 +98,11 @@ export function Canvas() {
   const onDrop = useCallback(
     (event: DragEvent) => {
       event.preventDefault()
-      const type = event.dataTransfer.getData(PALETTE_MIME) as DeviceType
-      if (!type || !(type in DEVICE_PROFILES)) return
+      const presetId = event.dataTransfer.getData(PALETTE_MIME)
+      if (!presetId || !(presetId in PRESETS_BY_ID)) return
       const position = screenToFlowPosition({ x: event.clientX, y: event.clientY })
       // Drop point is the cursor; nudge so the node centres under it.
-      addDevice(type, { x: position.x - 76, y: position.y - 22 })
+      addDevice(presetId, { x: position.x - 79, y: position.y - 22 })
     },
     [addDevice, screenToFlowPosition],
   )
@@ -159,7 +152,7 @@ export function Canvas() {
         maskColor="rgba(9, 12, 17, 0.75)"
         nodeColor={(node) => {
           const device = devices.find((d) => d.id === node.id)
-          return device ? MINIMAP_COLOURS[device.type] : '#64748b'
+          return device ? visualFor(device).hex : '#64748b'
         }}
       />
     </ReactFlow>

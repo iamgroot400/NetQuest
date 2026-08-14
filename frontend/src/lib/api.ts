@@ -10,8 +10,11 @@ import type {
   ChallengeValidationResponse,
   CommandReference,
   CommandResponse,
+  ConnectionResult,
   TopologyDocument,
+  TransportProtocol,
   ValidationResponse,
+  WellKnownService,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -52,6 +55,27 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ topology, device_id: deviceId, command }),
     }),
+
+  /** Test whether one device can reach a port on another, and where it stopped. */
+  testConnection: (
+    topology: TopologyDocument,
+    sourceDeviceId: string,
+    destination: string,
+    port: number,
+    protocol: TransportProtocol = 'TCP',
+  ) =>
+    request<ConnectionResult>('/simulate/connect', {
+      method: 'POST',
+      body: JSON.stringify({
+        topology,
+        source_device_id: sourceDeviceId,
+        destination,
+        port,
+        protocol,
+      }),
+    }),
+
+  wellKnownServices: () => request<WellKnownService[]>('/services'),
 
   validateTopology: (topology: TopologyDocument) =>
     request<ValidationResponse>('/topology/validate', {

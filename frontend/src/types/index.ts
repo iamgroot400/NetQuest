@@ -5,7 +5,68 @@
 
 export const TOPOLOGY_VERSION = 1
 
-export type DeviceType = 'pc' | 'switch' | 'router' | 'server'
+export type DeviceType = 'pc' | 'switch' | 'router' | 'server' | 'firewall'
+
+export type TransportProtocol = 'TCP' | 'UDP'
+
+export interface Service {
+  name: string
+  protocol: TransportProtocol
+  port: number
+  enabled: boolean
+}
+
+export type DnsRecordType = 'A' | 'CNAME' | 'MX'
+
+export interface DnsRecord {
+  name: string
+  type: DnsRecordType
+  value: string
+  priority: number
+}
+
+export interface DhcpPool {
+  start: string
+  end: string
+  netmask: string
+  gateway: string | null
+  dns: string | null
+  lease_seconds: number
+  enabled: boolean
+}
+
+export type FirewallAction = 'allow' | 'deny'
+export type RuleProtocol = 'any' | 'tcp' | 'udp' | 'icmp'
+
+export interface FirewallRule {
+  action: FirewallAction
+  protocol: RuleProtocol
+  port: number | null
+  source: string
+  destination: string
+  description: string
+}
+
+export interface NatConfig {
+  enabled: boolean
+  outside_interface_id: string | null
+}
+
+export interface VpnConfig {
+  server: string | null
+  remote_network: string | null
+  remote_netmask: string | null
+  tunnel_ip: string | null
+  is_gateway: boolean
+  enabled: boolean
+}
+
+export interface WellKnownService {
+  name: string
+  protocol: TransportProtocol
+  port: number
+  description: string
+}
 
 export interface Position {
   x: number
@@ -29,13 +90,25 @@ export interface StaticRoute {
 
 export interface DeviceConfig {
   gateway: string | null
+  dns_server: string | null
+  dhcp_client: boolean
   static_routes: StaticRoute[]
+  services: Service[]
+  dns_records: DnsRecord[]
+  dhcp_pool: DhcpPool | null
+  firewall_rules: FirewallRule[]
+  firewall_default_policy: FirewallAction
+  nat: NatConfig | null
+  vpn: VpnConfig | null
 }
 
 /** Tables the devices learned. Round-tripped between commands, dropped on export. */
 export interface DeviceRuntime {
   arp_table: Record<string, string>
   mac_table: Record<string, string>
+  dns_cache: Record<string, string>
+  dhcp_leases: Record<string, string>
+  firewall_hits: Record<string, number>
 }
 
 export interface Device {
@@ -110,6 +183,19 @@ export interface PacketSnapshot {
   arp_target_ip: string | null
   arp_sender_mac: string | null
   arp_target_mac: string | null
+  transport_protocol: string | null
+  src_port: number | null
+  dst_port: number | null
+  tcp_flag: string | null
+  dns_query_name: string | null
+  dns_query_type: string | null
+  dns_status: string | null
+  dns_answers: string[]
+  dhcp_type: string | null
+  dhcp_offered_ip: string | null
+  /** True when this packet carries another IPv4 packet inside a VPN tunnel. */
+  encapsulated: boolean
+  inner_summary: string | null
   path: string[]
 }
 
@@ -122,10 +208,62 @@ export interface RouteEntry {
   prefix_length: number
 }
 
+export interface NatTranslation {
+  inside_ip: string
+  inside_port: number | null
+  outside_ip: string
+  outside_port: number | null
+  protocol: string
+  destination_ip: string
+}
+
+/** What DHCP configured on a client, written back into the topology document. */
+export interface AssignedConfig {
+  interface_id: string | null
+  ipv4: string | null
+  netmask: string | null
+  gateway: string | null
+  dns_server: string | null
+  lease_seconds: number | null
+  server_ip: string | null
+}
+
 export interface DeviceState {
   arp_table: Record<string, string>
   mac_table: Record<string, string>
   routing_table: RouteEntry[]
+  dns_cache: Record<string, string>
+  dhcp_leases: Record<string, string>
+  firewall_hits: Record<string, number>
+  nat_translations: NatTranslation[]
+  assigned: AssignedConfig | null
+}
+
+export type ConnectionOutcome =
+  | 'open'
+  | 'refused'
+  | 'filtered'
+  | 'unreachable'
+  | 'no-route'
+  | 'dns-failure'
+  | 'no-source-address'
+
+export interface ConnectionResult {
+  reachable: boolean
+  outcome: ConnectionOutcome
+  detail: string
+  target: string
+  resolved_ip: string | null
+  port: number | null
+  protocol: TransportProtocol
+  /** Devices the outbound traffic actually crossed, in order. */
+  path: string[]
+  blocked_at: string | null
+  blocked_reason: string | null
+  dns_detail: string | null
+  events: SimEvent[]
+  packets: PacketSnapshot[]
+  device_state: Record<string, DeviceState>
 }
 
 export interface CommandResponse {

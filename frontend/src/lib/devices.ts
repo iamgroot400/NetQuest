@@ -1,54 +1,147 @@
 /**
  * Device creation and naming.
  *
- * Default names (PC-01, Switch-01, …) are part of the contract with the
+ * The palette offers *presets* rather than raw device types: a DNS server and
+ * a web server are both `server`, they just start with different services
+ * enabled. Default names (PC-01, WEB-01, …) are part of the contract with the
  * challenge files, which refer to devices by name.
  */
 
-import type { Device, DeviceType, Link, NetworkInterface, Position } from '@/types'
+import type {
+  Device,
+  DeviceConfig,
+  DeviceType,
+  DnsRecord,
+  Link,
+  NetworkInterface,
+  Position,
+  Service,
+} from '@/types'
 
-interface DeviceProfile {
+export interface DevicePreset {
+  /** Palette key, and what `addDevice` is called with. */
+  id: string
+  type: DeviceType
   label: string
-  /** Prefix used for auto-naming; challenge objectives rely on these. */
+  /** Auto-naming prefix; challenge objectives rely on these. */
   prefix: string
   ports: number
   /** Layer 3 devices get address fields in the config panel. */
   addressable: boolean
   blurb: string
+  services?: Service[]
+  dnsRecords?: DnsRecord[]
+  /** Marks the preset in the palette as a distinct role. */
+  role: 'endpoint' | 'infrastructure' | 'service'
 }
 
-export const DEVICE_PROFILES: Record<DeviceType, DeviceProfile> = {
-  pc: {
+function tcp(name: string, port: number): Service {
+  return { name, protocol: 'TCP', port, enabled: true }
+}
+
+function udp(name: string, port: number): Service {
+  return { name, protocol: 'UDP', port, enabled: true }
+}
+
+export const DEVICE_PRESETS: DevicePreset[] = [
+  {
+    id: 'pc',
+    type: 'pc',
     label: 'PC',
     prefix: 'PC',
     ports: 1,
     addressable: true,
+    role: 'endpoint',
     blurb: 'An end host with one network adapter.',
   },
-  switch: {
+  {
+    id: 'switch',
+    type: 'switch',
     label: 'Switch',
     prefix: 'Switch',
     ports: 8,
     addressable: false,
+    role: 'infrastructure',
     blurb: 'Layer 2. Learns MAC addresses and forwards frames.',
   },
-  router: {
+  {
+    id: 'router',
+    type: 'router',
     label: 'Router',
     prefix: 'Router',
     ports: 2,
     addressable: true,
-    blurb: 'Layer 3. Joins two subnets and forwards IPv4.',
+    role: 'infrastructure',
+    blurb: 'Layer 3. Joins subnets, forwards IPv4, and can do NAT.',
   },
-  server: {
+  {
+    id: 'firewall',
+    type: 'firewall',
+    label: 'Firewall',
+    prefix: 'Firewall',
+    ports: 2,
+    addressable: false,
+    role: 'infrastructure',
+    blurb: 'Sits inline and filters traffic by protocol, port and address.',
+  },
+  {
+    id: 'web-server',
+    type: 'server',
+    label: 'Web Server',
+    prefix: 'WEB',
+    ports: 1,
+    addressable: true,
+    role: 'service',
+    blurb: 'A server listening on HTTP and HTTPS.',
+    services: [tcp('HTTP', 80), tcp('HTTPS', 443)],
+  },
+  {
+    id: 'dns-server',
+    type: 'server',
+    label: 'DNS Server',
+    prefix: 'DNS',
+    ports: 1,
+    addressable: true,
+    role: 'service',
+    blurb: 'Resolves names to addresses from a zone you edit.',
+    services: [udp('DNS', 53)],
+    dnsRecords: [],
+  },
+  {
+    id: 'dhcp-server',
+    type: 'server',
+    label: 'DHCP Server',
+    prefix: 'DHCP',
+    ports: 1,
+    addressable: true,
+    role: 'service',
+    blurb: 'Hands addresses, gateway and DNS to clients that ask.',
+    services: [udp('DHCP', 67)],
+  },
+  {
+    id: 'server',
+    type: 'server',
     label: 'Server',
     prefix: 'Server',
     ports: 1,
     addressable: true,
-    blurb: 'An end host that answers requests.',
+    role: 'service',
+    blurb: 'A bare server. Add whichever services you need.',
   },
-}
+]
 
-export const DEVICE_ORDER: DeviceType[] = ['pc', 'switch', 'router', 'server']
+export const PRESETS_BY_ID: Record<string, DevicePreset> = Object.fromEntries(
+  DEVICE_PRESETS.map((preset) => [preset.id, preset]),
+)
+
+/** Fallback used when only a device type is known (loading a saved file). */
+export const PRESET_BY_TYPE: Record<DeviceType, DevicePreset> = {
+  pc: PRESETS_BY_ID.pc!,
+  switch: PRESETS_BY_ID.switch!,
+  router: PRESETS_BY_ID.router!,
+  firewall: PRESETS_BY_ID.firewall!,
+  server: PRESETS_BY_ID.server!,
+}
 
 let sequence = Date.now() % 100000
 
@@ -71,8 +164,23 @@ function generateMac(): string {
     .toUpperCase()
 }
 
-export function nextDeviceName(type: DeviceType, existing: Device[]): string {
-  const { prefix } = DEVICE_PROFILES[type]
+export function emptyConfig(): DeviceConfig {
+  return {
+    gateway: null,
+    dns_server: null,
+    dhcp_client: false,
+    static_routes: [],
+    services: [],
+    dns_records: [],
+    dhcp_pool: null,
+    firewall_rules: [],
+    firewall_default_policy: 'allow',
+    nat: null,
+    vpn: null,
+  }
+}
+
+export function nextDeviceName(prefix: string, existing: Device[]): string {
   const taken = new Set(existing.map((d) => d.name.toLowerCase()))
   for (let n = 1; n < 1000; n += 1) {
     const candidate = `${prefix}-${String(n).padStart(2, '0')}`
@@ -82,28 +190,67 @@ export function nextDeviceName(type: DeviceType, existing: Device[]): string {
 }
 
 export function createDevice(
-  type: DeviceType,
+  presetId: string,
   position: Position,
   existing: Device[],
 ): Device {
-  const profile = DEVICE_PROFILES[type]
+  const preset = PRESETS_BY_ID[presetId] ?? PRESETS_BY_ID.pc!
   const id = uid('dev')
+
+  const config = emptyConfig()
+  if (preset.services) config.services = preset.services.map((s) => ({ ...s }))
+  if (preset.dnsRecords) config.dns_records = preset.dnsRecords.map((r) => ({ ...r }))
+  if (preset.id === 'dhcp-server') {
+    // A pool the learner can see and edit immediately, rather than an empty
+    // form that silently serves nobody.
+    config.dhcp_pool = {
+      start: '192.168.1.100',
+      end: '192.168.1.150',
+      netmask: '255.255.255.0',
+      gateway: null,
+      dns: null,
+      lease_seconds: 86400,
+      enabled: true,
+    }
+  }
+
   return {
     id,
-    type,
-    name: nextDeviceName(type, existing),
+    type: preset.type,
+    name: nextDeviceName(preset.prefix, existing),
     position,
-    interfaces: Array.from({ length: profile.ports }, (_, index) => ({
+    interfaces: Array.from({ length: preset.ports }, (_, index) => ({
       id: `${id}-eth${index}`,
       name: `eth${index}`,
       mac: generateMac(),
       ipv4: null,
-      netmask: profile.addressable ? '255.255.255.0' : null,
+      netmask: preset.addressable ? '255.255.255.0' : null,
       enabled: true,
     })),
-    config: { gateway: null, static_routes: [] },
-    runtime: { arp_table: {}, mac_table: {} },
+    config,
+    runtime: {
+      arp_table: {},
+      mac_table: {},
+      dns_cache: {},
+      dhcp_leases: {},
+      firewall_hits: {},
+    },
   }
+}
+
+/**
+ * What a device is *acting* as, from its configuration.
+ * Drives the icon, so a plain server that gains a DNS zone starts looking
+ * like a DNS server without changing its type.
+ */
+export function deviceRole(device: Device): string {
+  if (device.type !== 'server') return device.type
+  const ports = device.config.services.filter((s) => s.enabled).map((s) => s.port)
+  if (device.config.dhcp_pool && ports.includes(67)) return 'dhcp-server'
+  if (ports.includes(53)) return 'dns-server'
+  if (device.config.vpn?.is_gateway) return 'vpn-server'
+  if (ports.includes(80) || ports.includes(443)) return 'web-server'
+  return 'server'
 }
 
 export function createLink(

@@ -8,11 +8,11 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import { createDevice, createLink, firstFreeInterface } from '@/lib/devices'
+import { createDevice, createLink, emptyConfig, firstFreeInterface } from '@/lib/devices'
 import type {
   Device,
+  DeviceConfig,
   DeviceState,
-  DeviceType,
   Link,
   LinkStatus,
   NetworkInterface,
@@ -33,7 +33,7 @@ interface TopologyState {
   selectedDeviceId: string | null
   selectedLinkId: string | null
 
-  addDevice: (type: DeviceType, position: Position) => Device
+  addDevice: (presetId: string, position: Position) => Device
   removeDevice: (deviceId: string) => void
   renameDevice: (deviceId: string, name: string) => void
   moveDevice: (deviceId: string, position: Position) => void
@@ -44,6 +44,8 @@ interface TopologyState {
   ) => void
   setGateway: (deviceId: string, gateway: string | null) => void
   setStaticRoutes: (deviceId: string, routes: StaticRoute[]) => void
+  /** Patch any part of a device's configuration — services, DNS, rules, NAT, VPN. */
+  updateConfig: (deviceId: string, patch: Partial<DeviceConfig>) => void
 
   connect: (sourceDeviceId: string, targetDeviceId: string) => ConnectResult
   removeLink: (linkId: string) => void
@@ -65,6 +67,22 @@ function patchDevice(devices: Device[], deviceId: string, fn: (device: Device) =
   return devices.map((device) => (device.id === deviceId ? fn(device) : device))
 }
 
+/** Fill in anything a document is missing, so older saved files keep working. */
+export function normalizeDevice(device: Device): Device {
+  return {
+    ...device,
+    config: { ...emptyConfig(), ...(device.config ?? {}) },
+    runtime: {
+      arp_table: {},
+      mac_table: {},
+      dns_cache: {},
+      dhcp_leases: {},
+      firewall_hits: {},
+      ...(device.runtime ?? {}),
+    },
+  }
+}
+
 export const useTopologyStore = create<TopologyState>()(
   persist(
     (set, get) => ({
@@ -74,8 +92,8 @@ export const useTopologyStore = create<TopologyState>()(
       selectedDeviceId: null,
       selectedLinkId: null,
 
-      addDevice: (type, position) => {
-        const device = createDevice(type, position, get().devices)
+      addDevice: (presetId, position) => {
+        const device = createDevice(presetId, position, get().devices)
         set((state) => ({
           devices: [...state.devices, device],
           selectedDeviceId: device.id,
@@ -131,6 +149,14 @@ export const useTopologyStore = create<TopologyState>()(
           })),
         })),
 
+      updateConfig: (deviceId, patch) =>
+        set((state) => ({
+          devices: patchDevice(state.devices, deviceId, (device) => ({
+            ...device,
+            config: { ...device.config, ...patch },
+          })),
+        })),
+
       connect: (sourceDeviceId, targetDeviceId) => {
         const { devices, links } = get()
         if (sourceDeviceId === targetDeviceId) {
@@ -178,13 +204,35 @@ export const useTopologyStore = create<TopologyState>()(
           devices: state.devices.map((device) => {
             const learned = deviceState[device.id]
             if (!learned) return device
-            return {
+
+            const next: Device = {
               ...device,
               runtime: {
                 arp_table: learned.arp_table,
                 mac_table: learned.mac_table,
+                dns_cache: learned.dns_cache ?? {},
+                dhcp_leases: learned.dhcp_leases ?? {},
+                firewall_hits: learned.firewall_hits ?? {},
               },
             }
+
+            // A DHCP lease genuinely reconfigures the client, so it belongs in
+            // the document itself — not just in the learned-state block. This
+            // is what makes a wrong pool break the client for good.
+            const assigned = learned.assigned
+            if (assigned) {
+              next.interfaces = device.interfaces.map((iface) =>
+                iface.id === assigned.interface_id
+                  ? { ...iface, ipv4: assigned.ipv4, netmask: assigned.netmask }
+                  : iface,
+              )
+              next.config = {
+                ...device.config,
+                gateway: assigned.gateway,
+                dns_server: assigned.dns_server,
+              }
+            }
+            return next
           }),
         })),
 
@@ -192,17 +240,22 @@ export const useTopologyStore = create<TopologyState>()(
         set((state) => ({
           devices: state.devices.map((device) => ({
             ...device,
-            runtime: { arp_table: {}, mac_table: {} },
+            runtime: {
+              arp_table: {},
+              mac_table: {},
+              dns_cache: {},
+              dhcp_leases: {},
+              firewall_hits: {},
+            },
           })),
         })),
 
       loadDocument: (document) =>
         set({
           name: document.name || EMPTY_NAME,
-          devices: document.devices.map((device) => ({
-            ...device,
-            runtime: device.runtime ?? { arp_table: {}, mac_table: {} },
-          })),
+          // Files saved before a field existed simply lack it, so every device
+          // is normalised on the way in rather than guarded at every read.
+          devices: document.devices.map(normalizeDevice),
           links: document.links,
           selectedDeviceId: null,
           selectedLinkId: null,
@@ -247,7 +300,13 @@ export function toExportDocument(state = useTopologyStore.getState()): TopologyD
     ...toDocument(state),
     devices: state.devices.map((device) => ({
       ...device,
-      runtime: { arp_table: {}, mac_table: {} },
+      runtime: {
+        arp_table: {},
+        mac_table: {},
+        dns_cache: {},
+        dhcp_leases: {},
+        firewall_hits: {},
+      },
     })),
   }
 }
