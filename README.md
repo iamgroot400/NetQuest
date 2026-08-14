@@ -137,7 +137,7 @@ Vite proxies `/api` to `localhost:8000` in development.
 ### Tests
 
 ```bash
-cd backend && .venv/bin/pytest -v      # 135 engine, API and challenge tests
+cd backend && .venv/bin/pytest -v      # 283 engine, API and challenge tests
 cd frontend && npm run build           # typecheck + production build
 ```
 
@@ -153,9 +153,11 @@ network-simulator/
 │   │   ├── schemas/           Pydantic wire formats
 │   │   ├── simulation/        ← the engine, no web framework anywhere
 │   │   │   ├── core/          addressing, MACs, events, graph, delivery loop
-│   │   │   ├── ethernet/  ipv4/  arp/  icmp/  routing/
-│   │   │   ├── devices/       base, host, pc, server, switch, router
-│   │   │   └── commands/      per-device terminal commands
+│   │   │   ├── ethernet/  ipv4/  arp/  icmp/  routing/  transport/
+│   │   │   ├── dns/  dhcp/     zone resolution, DORA exchange
+│   │   │   ├── devices/       base, host, pc, server, switch, router, firewall
+│   │   │   ├── commands/      per-device terminal commands
+│   │   │   └── connectivity.py the shared connection-test core
 │   │   └── main.py
 │   └── tests/
 ├── frontend/
@@ -165,7 +167,7 @@ network-simulator/
 │       ├── components/        app shell and UI primitives
 │       ├── hooks/  lib/  types/
 │       └── nginx.conf
-├── challenges/                beginner · switching · routing · troubleshooting
+├── challenges/                beginner · switching · routing · services · security · troubleshooting
 └── docker-compose.yml
 ```
 
@@ -174,18 +176,24 @@ or a different transport entirely.
 
 ## Known limitations
 
-This is a deliberately small MVP. It models the following honestly, and nothing
-else:
+This is a deliberately scoped simulator. It models the following honestly, and
+nothing else:
 
-- **Not implemented yet:** VLANs, STP, DHCP, DNS, NAT, ACLs, IPv6, TCP/UDP,
-  wireless, subinterfaces, dynamic routing (OSPF/RIP/BGP).
+- **Not implemented yet:** VLANs, STP, IPv6, TLS, HTTP content, wireless,
+  subinterfaces, dynamic routing (OSPF/RIP/BGP), stateful TCP beyond the
+  handshake (no sequence numbers, windows or retransmission).
 - **No spanning tree.** A physical loop between switches really does flood
   forever; the engine caps it at 500 hops and says so in the log rather than
   hanging. That is a lesson, not a bug — but do not expect STP to save you.
 - **No timing.** Frames move instantly. `ping` reports TTL and byte counts,
   which are real, but no round-trip time, because there is none to report.
-- **ARP entries never expire.** Real caches age out after minutes; here an entry
-  that vanished between two commands would look like a fault, not a lesson.
+- **ARP and DNS cache entries never expire.** Real caches age out after
+  minutes; here an entry that vanished between two commands would look like a
+  fault, not a lesson.
+- **DHCP leases never expire either** — released only on request.
+- **The firewall is stateful** for the return leg of a flow it already
+  permitted, but has no deep packet inspection: it decides on protocol, port
+  and address only.
 - **Cables are always full duplex, always the right kind.** No crossover
   cables, no speed or duplex mismatch.
 - **One address per interface**, and no loopback interfaces.
@@ -207,14 +215,14 @@ knowledge of the codebase at all.
 
 | Version | Theme                                                              |
 | ------- | ------------------------------------------------------------------ |
-| 0.2     | VLANs and trunking; switch port configuration; STP so loops survive |
-| 0.3     | DHCP — leases, relays, and the classic "no address" mission set     |
-| 0.4     | DNS and a simple application layer on servers                       |
-| 0.5     | NAT and ACLs; a "network edge" mission arc                          |
+| 0.3     | VLANs and trunking; switch port configuration; STP so loops survive |
+| 0.4     | DHCP relays; lease expiry and renewal timing                        |
+| 0.5     | ACLs as a distinct concept from firewall rules; extended ACL syntax |
 | 0.6     | Wireshark-style capture export (`.pcap`) from the packet inspector  |
 | 0.7     | Accounts and shared topologies on the optional Postgres service     |
 | 0.8     | Dynamic routing: RIP, then OSPF                                     |
-| 1.0     | A full guided curriculum from Ethernet to ACLs                      |
+| 0.9     | Real HTTP content and TLS on the web-server preset                  |
+| 1.0     | A full guided curriculum from Ethernet to dynamic routing           |
 
 ## Licence
 
