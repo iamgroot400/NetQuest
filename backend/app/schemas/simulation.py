@@ -50,6 +50,18 @@ class PacketSchema(BaseModel):
     arp_target_ip: str | None = None
     arp_sender_mac: str | None = None
     arp_target_mac: str | None = None
+    transport_protocol: str | None = None
+    src_port: int | None = None
+    dst_port: int | None = None
+    tcp_flag: str | None = None
+    dns_query_name: str | None = None
+    dns_query_type: str | None = None
+    dns_status: str | None = None
+    dns_answers: list[str] = Field(default_factory=list)
+    dhcp_type: str | None = None
+    dhcp_offered_ip: str | None = None
+    encapsulated: bool = False
+    inner_summary: str | None = None
     path: list[str] = Field(default_factory=list)
 
 
@@ -62,10 +74,41 @@ class RouteSchema(BaseModel):
     prefix_length: int
 
 
+class AssignedConfigSchema(BaseModel):
+    """What DHCP configured on a client.
+
+    The frontend writes this back into the topology document, so a lease
+    genuinely reconfigures the device rather than being a one-off readout.
+    """
+
+    interface_id: str | None = None
+    ipv4: str | None = None
+    netmask: str | None = None
+    gateway: str | None = None
+    dns_server: str | None = None
+    lease_seconds: int | None = None
+    server_ip: str | None = None
+
+
+class NatTranslationSchema(BaseModel):
+    inside_ip: str
+    inside_port: int | None = None
+    outside_ip: str
+    outside_port: int | None = None
+    protocol: str
+    destination_ip: str
+
+
 class DeviceStateSchema(BaseModel):
     arp_table: dict[str, str] = Field(default_factory=dict)
     mac_table: dict[str, str] = Field(default_factory=dict)
     routing_table: list[RouteSchema] = Field(default_factory=list)
+    dns_cache: dict[str, str] = Field(default_factory=dict)
+    dhcp_leases: dict[str, str] = Field(default_factory=dict)
+    firewall_hits: dict[str, int] = Field(default_factory=dict)
+    nat_translations: list[NatTranslationSchema] = Field(default_factory=list)
+    #: Present only when DHCP handed this device a lease during the command.
+    assigned: AssignedConfigSchema | None = None
 
 
 class CommandResponse(BaseModel):
@@ -78,6 +121,34 @@ class CommandResponse(BaseModel):
     #: Learned tables to write back into the topology document.
     device_state: dict[str, DeviceStateSchema] = Field(default_factory=dict)
     success: bool = True
+
+
+class ConnectionRequest(BaseModel):
+    topology: TopologySchema
+    source_device_id: str
+    #: An address or a hostname — a name is resolved through the simulated DNS.
+    destination: str
+    port: int = 80
+    protocol: str = "TCP"  # "TCP" | "UDP"
+
+
+class ConnectionResponse(BaseModel):
+    reachable: bool
+    #: open | refused | filtered | unreachable | no-route | dns-failure
+    outcome: str
+    detail: str
+    target: str
+    resolved_ip: str | None = None
+    port: int | None = None
+    protocol: str = "TCP"
+    #: Devices the outbound traffic actually crossed, in order.
+    path: list[str] = Field(default_factory=list)
+    blocked_at: str | None = None
+    blocked_reason: str | None = None
+    dns_detail: str | None = None
+    events: list[SimEventSchema] = Field(default_factory=list)
+    packets: list[PacketSchema] = Field(default_factory=list)
+    device_state: dict[str, DeviceStateSchema] = Field(default_factory=dict)
 
 
 class ValidationIssue(BaseModel):

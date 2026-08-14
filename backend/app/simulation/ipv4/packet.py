@@ -16,6 +16,8 @@ DEFAULT_TTL = 64
 
 class IPProtocol(str, Enum):
     ICMP = "ICMP"
+    TCP = "TCP"
+    UDP = "UDP"
 
 
 @dataclass

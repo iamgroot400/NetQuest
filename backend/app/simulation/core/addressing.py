@@ -97,3 +97,59 @@ def is_usable_host_ip(ip: str, mask: str) -> bool:
 
 def format_cidr(ip: str, mask: str) -> str:
     return f"{ip}/{netmask_to_prefix(mask)}"
+
+
+#: Firewall rules and NAT scopes are written as CIDR, or the word "any".
+ANY_CIDR = "any"
+
+
+def parse_cidr(value: str) -> tuple[str, str] | None:
+    """Split "192.168.1.0/24" into (network, netmask), or None if malformed.
+
+    A bare address is treated as a /32 host route, which is what a firewall
+    rule naming a single machine means.
+    """
+    text = (value or "").strip()
+    if not text or text.lower() == ANY_CIDR:
+        return None
+
+    if "/" not in text:
+        return (text, "255.255.255.255") if is_valid_ipv4(text) else None
+
+    address, _, prefix_text = text.partition("/")
+    if not is_valid_ipv4(address) or not prefix_text.isdigit():
+        return None
+    prefix = int(prefix_text)
+    if not 0 <= prefix <= 32:
+        return None
+    return address, prefix_to_netmask(prefix)
+
+
+def ip_matches_cidr(ip: str, value: str) -> bool:
+    """True when `ip` falls inside `value`. The word "any" matches everything."""
+    if not (value or "").strip() or value.strip().lower() == ANY_CIDR:
+        return True
+    parsed = parse_cidr(value)
+    if parsed is None:
+        # An unparseable scope must never silently match everything.
+        return False
+    network, mask = parsed
+    return is_valid_ipv4(ip) and ip_in_network(ip, network, mask)
+
+
+def ip_between(ip: str, first: str, last: str) -> bool:
+    """Inclusive range test, used for DHCP pools."""
+    if not (is_valid_ipv4(ip) and is_valid_ipv4(first) and is_valid_ipv4(last)):
+        return False
+    return ip_to_int(first) <= ip_to_int(ip) <= ip_to_int(last)
+
+
+def iter_range(first: str, last: str, limit: int = 4096):
+    """Addresses from `first` to `last` inclusive, capped to stay bounded."""
+    if not (is_valid_ipv4(first) and is_valid_ipv4(last)):
+        return
+    start, end = ip_to_int(first), ip_to_int(last)
+    if end < start:
+        return
+    for offset in range(min(end - start + 1, limit)):
+        yield int_to_ip(start + offset)

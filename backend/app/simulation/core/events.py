@@ -45,6 +45,44 @@ class EventType(str, Enum):
     ICMP_REPLY = "icmp_reply"
     ICMP_ERROR = "icmp_error"
 
+    # Layer 4
+    SEGMENT_SENT = "segment_sent"
+    TCP_SYN = "tcp_syn"
+    TCP_SYN_ACK = "tcp_syn_ack"
+    TCP_RST = "tcp_rst"
+    TCP_ESTABLISHED = "tcp_established"
+    UDP_DATAGRAM = "udp_datagram"
+    PORT_OPEN = "port_open"
+    PORT_CLOSED = "port_closed"
+
+    # DNS
+    DNS_QUERY = "dns_query"
+    DNS_RESPONSE = "dns_response"
+    DNS_NXDOMAIN = "dns_nxdomain"
+    DNS_CACHE_HIT = "dns_cache_hit"
+    DNS_NO_SERVER = "dns_no_server"
+
+    # DHCP
+    DHCP_DISCOVER = "dhcp_discover"
+    DHCP_OFFER = "dhcp_offer"
+    DHCP_REQUEST = "dhcp_request"
+    DHCP_ACK = "dhcp_ack"
+    DHCP_NAK = "dhcp_nak"
+    DHCP_APPLIED = "dhcp_applied"
+
+    # Firewall
+    FIREWALL_ALLOW = "firewall_allow"
+    FIREWALL_DENY = "firewall_deny"
+
+    # NAT
+    NAT_TRANSLATE = "nat_translate"
+    NAT_UNTRANSLATE = "nat_untranslate"
+    NAT_NO_ENTRY = "nat_no_entry"
+
+    # VPN
+    VPN_ENCAPSULATE = "vpn_encapsulate"
+    VPN_DECAPSULATE = "vpn_decapsulate"
+
 
 class Severity(str, Enum):
     INFO = "info"
@@ -101,6 +139,26 @@ class PacketSnapshot:
     arp_target_ip: str | None = None
     arp_sender_mac: str | None = None
     arp_target_mac: str | None = None
+
+    # Layer 4
+    transport_protocol: str | None = None
+    src_port: int | None = None
+    dst_port: int | None = None
+    tcp_flag: str | None = None
+
+    # Application payloads, surfaced so the inspector can show what was asked
+    # and what came back rather than an opaque blob.
+    dns_query_name: str | None = None
+    dns_query_type: str | None = None
+    dns_status: str | None = None
+    dns_answers: list[str] = field(default_factory=list)
+    dhcp_type: str | None = None
+    dhcp_offered_ip: str | None = None
+
+    #: True when this packet carries another IPv4 packet inside a VPN tunnel.
+    encapsulated: bool = False
+    inner_summary: str | None = None
+
     # Device names in traversal order, appended as the frame moves.
     path: list[str] = field(default_factory=list)
 

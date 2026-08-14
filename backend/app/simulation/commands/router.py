@@ -6,6 +6,7 @@ from .common import show_interfaces
 from .host import cmd_arp
 from .ping import run_ping
 from .registry import Command, CommandContext, CommandResult, CommandSet
+from .tools import cmd_ip, cmd_traceroute
 
 
 def cmd_show_ip_route(ctx: CommandContext) -> CommandResult:
@@ -46,6 +47,43 @@ def cmd_ping(ctx: CommandContext) -> CommandResult:
     return run_ping(ctx)
 
 
+def cmd_show_nat(ctx: CommandContext) -> CommandResult:
+    device = ctx.device
+    if not getattr(device, "nat_enabled", False):
+        return CommandResult(
+            output=[
+                "NAT is not enabled on this router.",
+                "",
+                "Turn it on in the configuration panel and choose which interface",
+                "faces the public network. Traffic leaving that interface then",
+                "leaves with the router's own address instead of a private one.",
+            ]
+        )
+
+    translations = getattr(device, "nat_table", [])
+    lines = [
+        "NAT translations",
+        "",
+        "Proto  Inside                 Outside                Destination",
+        "-----  ---------------------  ---------------------  ---------------",
+    ]
+    if not translations:
+        lines.append("(none yet — send some traffic out through the router)")
+        return CommandResult(output=lines)
+
+    for entry in translations:
+        inside = entry.inside_ip + (f":{entry.inside_port}" if entry.inside_port else "")
+        outside = entry.outside_ip + (
+            f":{entry.outside_port}" if entry.outside_port else ""
+        )
+        lines.append(
+            f"{entry.protocol:<6} {inside:<22} {outside:<22} {entry.destination_ip}"
+        )
+    lines.append("")
+    lines.append(f"{len(translations)} active translation(s).")
+    return CommandResult(output=lines)
+
+
 def cmd_help(ctx: CommandContext) -> CommandResult:
     return CommandResult(
         output=[f"Available commands on {ctx.device.name}:", "", *ROUTER_COMMANDS.help_lines()]
@@ -70,10 +108,27 @@ ROUTER_COMMANDS = CommandSet(
             handler=cmd_show_arp,
         ),
         Command(
+            name="show ip nat translations",
+            summary="Show live NAT bindings between private and public addresses",
+            handler=cmd_show_nat,
+        ),
+        Command(
             name="ping",
             summary="Send ICMP echo requests from this router",
             usage="ping <ip> [-n count]",
             handler=cmd_ping,
+        ),
+        Command(
+            name="traceroute",
+            summary="Trace the path from this router to a destination",
+            usage="traceroute <ip>",
+            handler=cmd_traceroute,
+        ),
+        Command(
+            name="ip",
+            summary="Show interfaces or the routing table",
+            usage="ip addr | ip route",
+            handler=cmd_ip,
         ),
         Command(name="help", summary="List available commands", handler=cmd_help),
         Command(

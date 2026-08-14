@@ -7,6 +7,7 @@ cannot forward, it says why with a real ICMP error rather than silence.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any
 
 from ..arp.packet import ArpOperation, ArpPacket
@@ -17,7 +18,46 @@ from ..ethernet.frame import EtherType, EthernetFrame, next_flow_id
 from ..icmp.message import IcmpCode, IcmpMessage, IcmpType
 from ..ipv4.packet import IPProtocol, IPv4Packet
 from ..routing.table import RoutingTable
+from ..transport.segment import TransportSegment
 from .base import Device
+
+
+@dataclass
+class NatEntry:
+    """One live source-NAT binding."""
+
+    inside_ip: str
+    inside_port: int | None
+    outside_ip: str
+    outside_port: int | None
+    protocol: str
+    destination_ip: str
+
+
+def _outbound_flow_port(packet: IPv4Packet) -> int | None:
+    """What identifies this conversation on the way out: the client's own port."""
+    payload = packet.payload
+    if isinstance(payload, TransportSegment):
+        return payload.src_port
+    if isinstance(payload, IcmpMessage):
+        return payload.identifier
+    return None
+
+
+def _inbound_flow_port(packet: IPv4Packet) -> int | None:
+    """And on the way back it is the *destination* port that identifies it.
+
+    The reply's source port belongs to the server, so matching on it would
+    never find the binding. An ICMP identifier is echoed unchanged, so the
+    same field works in both directions.
+    """
+    payload = packet.payload
+    if isinstance(payload, TransportSegment):
+        return payload.dst_port
+    if isinstance(payload, IcmpMessage):
+        return payload.identifier
+    return None
+
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle guard
     from ..core.engine import SimulationEngine
@@ -37,6 +77,73 @@ class Router(Device):
         #: Populated by the loader from connected subnets + static routes.
         self.routing_table = RoutingTable()
         self.icmp_inbox: list[tuple[IPv4Packet, IcmpMessage]] = []
+        #: Live source-NAT bindings, rebuilt per command run.
+        self.nat_table: list[NatEntry] = []
+
+    # -- NAT --------------------------------------------------------------
+
+    @property
+    def nat_enabled(self) -> bool:
+        nat = self.config.nat
+        return bool(nat and nat.enabled and nat.outside_interface_id)
+
+    @property
+    def nat_outside_interface(self) -> Interface | None:
+        nat = self.config.nat
+        if not (nat and nat.outside_interface_id):
+            return None
+        return self.interface(nat.outside_interface_id)
+
+    def _translate_outbound(
+        self,
+        packet: IPv4Packet,
+        outside: Interface,
+        engine: "SimulationEngine",
+    ) -> IPv4Packet:
+        """Rewrite a private source address to the router's public one."""
+        assert outside.ipv4
+        port = _outbound_flow_port(packet)
+        entry = NatEntry(
+            inside_ip=packet.src_ip,
+            inside_port=port,
+            outside_ip=outside.ipv4,
+            outside_port=port,
+            protocol=packet.protocol.value,
+            destination_ip=packet.dst_ip,
+        )
+        if not any(
+            e.inside_ip == entry.inside_ip
+            and e.inside_port == entry.inside_port
+            and e.protocol == entry.protocol
+            and e.destination_ip == entry.destination_ip
+            for e in self.nat_table
+        ):
+            self.nat_table.append(entry)
+
+        engine.log(
+            EventType.NAT_TRANSLATE,
+            f"{self.name}: NAT {packet.src_ip}"
+            + (f":{port}" if port is not None else "")
+            + f" → {outside.ipv4}"
+            + (f":{port}" if port is not None else "")
+            + f" for traffic to {packet.dst_ip}",
+            device=self,
+            interface=outside,
+        )
+        return replace(packet, src_ip=outside.ipv4)
+
+    def _find_nat_entry(self, packet: IPv4Packet) -> NatEntry | None:
+        """The binding a reply belongs to, if this is return traffic at all."""
+        port = _inbound_flow_port(packet)
+        for entry in self.nat_table:
+            if entry.protocol != packet.protocol.value:
+                continue
+            if entry.outside_ip != packet.dst_ip:
+                continue
+            if entry.outside_port is not None and entry.outside_port != port:
+                continue
+            return entry
+        return None
 
     # -- reception --------------------------------------------------------
 
@@ -122,6 +229,41 @@ class Router(Device):
     ) -> list[Emission]:
         packet = frame.payload
         assert isinstance(packet, IPv4Packet)
+
+        # NAT return traffic arrives addressed to the router's own public
+        # address, so it must be mapped back before we decide it is for us.
+        outside = self.nat_outside_interface
+        if (
+            self.nat_enabled
+            and outside is not None
+            and in_interface.id == outside.id
+            and packet.dst_ip == outside.ipv4
+        ):
+            entry = self._find_nat_entry(packet)
+            if entry is not None:
+                port = _inbound_flow_port(packet)
+                engine.log(
+                    EventType.NAT_UNTRANSLATE,
+                    f"{self.name}: reply for {packet.dst_ip}"
+                    + (f":{port}" if port is not None else "")
+                    + f" belongs to {entry.inside_ip} — rewriting the destination",
+                    device=self,
+                    interface=in_interface,
+                )
+                return self._forward(
+                    replace(packet, dst_ip=entry.inside_ip), frame, in_interface, engine
+                )
+
+            if isinstance(packet.payload, TransportSegment):
+                engine.log(
+                    EventType.NAT_NO_ENTRY,
+                    f"{self.name}: unsolicited traffic arrived for {packet.dst_ip} — "
+                    "no private host started this conversation, so there is nobody "
+                    "to hand it to",
+                    severity=Severity.WARNING,
+                    device=self,
+                    interface=in_interface,
+                )
 
         if self.owns_ip(packet.dst_ip) or is_broadcast_ip(
             packet.dst_ip, in_interface.ipv4, in_interface.netmask
@@ -238,6 +380,18 @@ class Router(Device):
             interface=out_iface,
             frame=frame,
         )
+
+        # Source NAT happens on the way out of the public interface, so the
+        # private address never appears on the far side.
+        outside = self.nat_outside_interface
+        if (
+            self.nat_enabled
+            and outside is not None
+            and out_iface.id == outside.id
+            and outside.has_ip
+            and not self.owns_ip(forwarded.src_ip)
+        ):
+            forwarded = self._translate_outbound(forwarded, outside, engine)
 
         dst_mac = engine.resolve_arp(self, next_hop, out_iface)
         if dst_mac is None:
@@ -382,6 +536,17 @@ class Router(Device):
         return {
             "arp_table": self.arp_table.to_dict(),
             "mac_table": {},
+            "nat_translations": [
+                {
+                    "inside_ip": entry.inside_ip,
+                    "inside_port": entry.inside_port,
+                    "outside_ip": entry.outside_ip,
+                    "outside_port": entry.outside_port,
+                    "protocol": entry.protocol,
+                    "destination_ip": entry.destination_ip,
+                }
+                for entry in self.nat_table
+            ],
             "routing_table": [
                 {
                     "destination": r.destination,

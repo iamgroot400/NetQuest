@@ -7,11 +7,14 @@ from fastapi import APIRouter
 from ...schemas.simulation import (
     CommandRequest,
     CommandResponse,
+    ConnectionRequest,
+    ConnectionResponse,
     ValidationResponse,
 )
 from ...schemas.topology import TopologySchema
 from ...simulation.commands import COMMAND_SETS
-from ...simulation.runner import run_command
+from ...simulation.runner import run_command, run_connection_test
+from ...simulation.transport.services import WELL_KNOWN
 from ...simulation.validation import validate_topology
 
 router = APIRouter(tags=["simulation"])
@@ -27,6 +30,39 @@ def simulate_command(request: CommandRequest) -> CommandResponse:
     crossed a wire, and the learned tables to write back into the document.
     """
     return run_command(request.topology, request.device_id, request.command)
+
+
+@router.post("/simulate/connect", response_model=ConnectionResponse)
+def simulate_connection(request: ConnectionRequest) -> ConnectionResponse:
+    """Test whether one device can actually reach a port on another.
+
+    Runs the same engine the terminal does, so the verdict, the hop path and
+    the point where traffic stopped all come from real packets. The distinction
+    between *refused* (the host said no) and *filtered* (something in between
+    swallowed it) is preserved, because that is what tells a learner whether to
+    look at the server or at the firewall.
+    """
+    return run_connection_test(
+        request.topology,
+        request.source_device_id,
+        request.destination,
+        request.port,
+        request.protocol,
+    )
+
+
+@router.get("/services")
+def list_services() -> list[dict[str, object]]:
+    """The service catalogue the config panel offers as one-click ports."""
+    return [
+        {
+            "name": service.name,
+            "protocol": service.protocol.value,
+            "port": service.port,
+            "description": service.description,
+        }
+        for service in WELL_KNOWN
+    ]
 
 
 @router.post("/topology/validate", response_model=ValidationResponse)

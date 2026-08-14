@@ -61,9 +61,79 @@ class StaticRouteConfig:
 
 
 @dataclass
+class ServiceConfig:
+    """A port a device listens on. Disable it and the port closes for real."""
+
+    name: str
+    protocol: str  # "TCP" | "UDP"
+    port: int
+    enabled: bool = True
+
+
+@dataclass
+class DnsRecordConfig:
+    name: str
+    type: str  # "A" | "CNAME" | "MX"
+    value: str
+    priority: int = 10
+
+
+@dataclass
+class DhcpPoolConfig:
+    start: str
+    end: str
+    netmask: str
+    gateway: str | None = None
+    dns: str | None = None
+    lease_seconds: int = 86400
+    enabled: bool = True
+
+
+@dataclass
+class FirewallRuleConfig:
+    action: str  # "allow" | "deny"
+    protocol: str = "any"  # "any" | "tcp" | "udp" | "icmp"
+    port: int | None = None
+    source: str = "any"  # CIDR or "any"
+    destination: str = "any"
+    description: str = ""
+
+
+@dataclass
+class NatConfig:
+    enabled: bool = False
+    #: Traffic leaving this interface is translated to its address.
+    outside_interface_id: str | None = None
+
+
+@dataclass
+class VpnConfig:
+    #: On a client: the gateway to tunnel to, and what lies behind it.
+    server: str | None = None
+    remote_network: str | None = None
+    remote_netmask: str | None = None
+    #: The address the client uses inside the tunnel.
+    tunnel_ip: str | None = None
+    #: On a gateway: accept tunnels and forward what comes out of them.
+    is_gateway: bool = False
+    enabled: bool = True
+
+
+@dataclass
 class DeviceConfig:
     gateway: str | None = None
+    #: Where this device sends DNS queries.
+    dns_server: str | None = None
+    #: When true the device asks DHCP for its address instead of being static.
+    dhcp_client: bool = False
     static_routes: list[StaticRouteConfig] = field(default_factory=list)
+    services: list[ServiceConfig] = field(default_factory=list)
+    dns_records: list[DnsRecordConfig] = field(default_factory=list)
+    dhcp_pool: DhcpPoolConfig | None = None
+    firewall_rules: list[FirewallRuleConfig] = field(default_factory=list)
+    firewall_default_policy: str = "allow"
+    nat: NatConfig | None = None
+    vpn: VpnConfig | None = None
 
 
 @dataclass

@@ -54,15 +54,6 @@ def run_ping(ctx: CommandContext) -> CommandResult:
         return CommandResult(output=[error], success=False)
     assert target
 
-    if not is_valid_ipv4(target):
-        return CommandResult(
-            output=[
-                f"Ping request could not find host {target}. "
-                "Enter a valid IPv4 address such as 192.168.1.20."
-            ],
-            success=False,
-        )
-
     if not device.ip_interfaces:
         return CommandResult(
             output=[
@@ -72,15 +63,37 @@ def run_ping(ctx: CommandContext) -> CommandResult:
             success=False,
         )
 
-    if device.owns_ip(target):
-        lines = [f"Pinging {target} with {ECHO_PAYLOAD_BYTES} bytes of data:", ""]
+    # A name has to be resolved first, and a DNS failure is reported as such
+    # rather than as a dead host — telling those apart is the point.
+    address = target
+    if not is_valid_ipv4(target):
+        resolved, response = device.resolve_target(target, engine)
+        if resolved is None:
+            lines = [f"Ping request could not find host {target}."]
+            if response is None:
+                lines.append(
+                    "No DNS server is configured on this host, or it did not answer."
+                )
+            else:
+                lines.append(
+                    f"DNS answered {response.status.value}"
+                    + (f" — {response.detail}" if response.detail else "")
+                )
+            return CommandResult(output=lines, success=False)
+        address = resolved
+
+    shown = target if address == target else f"{target} [{address}]"
+
+    if device.owns_ip(address):
+        lines = [f"Pinging {shown} with {ECHO_PAYLOAD_BYTES} bytes of data:", ""]
         lines += [
-            f"Reply from {target}: bytes={ECHO_PAYLOAD_BYTES} TTL={DEFAULT_TTL} (local interface)"
+            f"Reply from {address}: bytes={ECHO_PAYLOAD_BYTES} TTL={DEFAULT_TTL} (local interface)"
         ] * count
-        lines += _statistics(target, count, count)
+        lines += _statistics(address, count, count)
         return CommandResult(output=lines)
 
-    lines = [f"Pinging {target} with {ECHO_PAYLOAD_BYTES} bytes of data:", ""]
+    target = address
+    lines = [f"Pinging {shown} with {ECHO_PAYLOAD_BYTES} bytes of data:", ""]
     received = 0
 
     for sequence in range(1, count + 1):

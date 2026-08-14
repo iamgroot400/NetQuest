@@ -23,6 +23,8 @@ class IcmpCode(str, Enum):
     NONE = ""
     NET_UNREACHABLE = "net-unreachable"
     HOST_UNREACHABLE = "host-unreachable"
+    PORT_UNREACHABLE = "port-unreachable"
+    ADMINISTRATIVELY_PROHIBITED = "administratively-prohibited"
     TTL_EXCEEDED_IN_TRANSIT = "ttl-exceeded-in-transit"
 
 

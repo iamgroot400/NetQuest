@@ -5,6 +5,7 @@ from __future__ import annotations
 from ..core.engine import SimulationEngine
 from ..core.network import Network
 from ..devices.base import Device
+from .firewall import FIREWALL_COMMANDS
 from .host import HOST_COMMANDS
 from .registry import Command, CommandContext, CommandResult, CommandSet
 from .router import ROUTER_COMMANDS
@@ -16,6 +17,7 @@ COMMAND_SETS: dict[str, CommandSet] = {
     "server": HOST_COMMANDS,
     "switch": SWITCH_COMMANDS,
     "router": ROUTER_COMMANDS,
+    "firewall": FIREWALL_COMMANDS,
 }
 
 

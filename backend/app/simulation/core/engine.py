@@ -12,9 +12,13 @@ from collections import deque
 from typing import TYPE_CHECKING
 
 from ..arp.packet import ArpPacket
+from ..dhcp.message import DhcpMessage
+from ..dns.message import DnsQuery, DnsResponse
 from ..ethernet.frame import EthernetFrame, EtherType, next_flow_id
 from ..icmp.message import IcmpMessage
 from ..ipv4.packet import IPv4Packet
+from ..transport.segment import TransportSegment
+from ..transport.services import describe_port
 from .events import EventType, PacketSnapshot, Severity, SimEvent
 from .mac import BROADCAST_MAC
 from .models import Emission, Interface
@@ -108,6 +112,8 @@ class SimulationEngine:
                 snap.icmp_code = inner.code.value or None
                 snap.icmp_sequence = inner.sequence
                 snap.icmp_identifier = inner.identifier
+            elif isinstance(inner, TransportSegment):
+                _describe_segment(snap, inner)
             else:
                 snap.summary = payload.summary()
 
@@ -296,3 +302,36 @@ class SimulationEngine:
                 interface=interface,
             )
         return resolved
+
+
+def _describe_segment(snap: PacketSnapshot, segment: TransportSegment) -> None:
+    """Fill in the layer 4 and application detail the inspector shows."""
+    snap.transport_protocol = segment.protocol.value
+    snap.src_port = segment.src_port
+    snap.dst_port = segment.dst_port
+    snap.tcp_flag = segment.flag.value if segment.flag else None
+    snap.summary = (
+        f"{segment.protocol.value} → {describe_port(segment.protocol, segment.dst_port)}"
+        + (f" [{segment.flag.value}]" if segment.flag else "")
+    )
+
+    payload = segment.payload
+    if isinstance(payload, DnsQuery):
+        snap.dns_query_name = payload.name
+        snap.dns_query_type = payload.type.value
+        snap.summary = payload.summary()
+    elif isinstance(payload, DnsResponse):
+        snap.dns_query_name = payload.name
+        snap.dns_query_type = payload.type.value
+        snap.dns_status = payload.status.value
+        snap.dns_answers = [record.display() for record in payload.answers]
+        snap.summary = payload.summary()
+    elif isinstance(payload, DhcpMessage):
+        snap.dhcp_type = payload.type.value
+        snap.dhcp_offered_ip = payload.lease.ip if payload.lease else None
+        snap.summary = payload.summary()
+    elif isinstance(payload, IPv4Packet):
+        # A tunnelled packet: show what is riding inside.
+        snap.encapsulated = True
+        snap.inner_summary = payload.summary()
+        snap.summary = f"VPN tunnel carrying {payload.src_ip} → {payload.dst_ip}"
